@@ -26,6 +26,7 @@ from .scrapers.openbb import OpenBBScraper
 from .scrapers.ossinsight import OSSInsightScraper
 from .scrapers.gdelt import GDELTScraper
 from .scrapers.google_news import GoogleNewsScraper
+from .scrapers.arxiv import ArXivScraper
 from .ai.client import create_ai_client
 from .ai.analyzer import ContentAnalyzer
 from .ai.summarizer import DailySummarizer
@@ -482,6 +483,14 @@ class HorizonOrchestrator:
                 gn_scraper = GoogleNewsScraper(self.config.sources.google_news, client)
                 tasks.append(self._fetch_with_progress("Google News", gn_scraper, since))
 
+            # ArXiv academic papers
+            if self.config.sources.arxiv:
+                for idx, arxiv_cfg in enumerate(self.config.sources.arxiv):
+                    if arxiv_cfg.enabled:
+                        arxiv_scraper = ArXivScraper(arxiv_cfg, client)
+                        name = f"ArXiv ({arxiv_cfg.category or idx+1})"
+                        tasks.append(self._fetch_with_progress(name, arxiv_scraper, since))
+
             # Fetch all concurrently
             outcomes = await asyncio.gather(*tasks)
             self.last_fetch_report = FetchReport(outcomes=list(outcomes))
@@ -554,6 +563,8 @@ class HorizonOrchestrator:
             return meta["source_name"]
         if meta.get("gn_query"):
             return f"google_news:{meta['gn_query']}"
+        if meta.get("arxiv_id"):
+            return f"arxiv:{meta['arxiv_id']}"
         if meta.get("domain"):
             return meta["domain"]
         return item.author or "unknown"
