@@ -20,6 +20,7 @@ class SourceType(str, Enum):
     OSSINSIGHT = "ossinsight"
     GDELT = "gdelt"
     GOOGLE_NEWS = "google_news"
+    ARXIV = "arxiv"
 
 
 class SourceDefinition(NamedTuple):
@@ -41,6 +42,7 @@ SOURCE_REGISTRY = {
     SourceType.OSSINSIGHT.value: SourceDefinition("ossinsight"),
     SourceType.GDELT.value: SourceDefinition("gdelt"),
     SourceType.GOOGLE_NEWS.value: SourceDefinition("google_news"),
+    SourceType.ARXIV.value: SourceDefinition("arxiv", config_is_list=True),
 }
 
 ProfileRoute = Optional[Union[str, List[str]]]
@@ -436,6 +438,19 @@ class GoogleNewsConfig(BaseModel):
     profile: ProfileRoute = None
 
 
+class ArXivConfig(BaseModel):
+    """ArXiv source configuration."""
+
+    enabled: bool = True
+    categories: List[str] = Field(
+        default_factory=lambda: ["cs.RO", "cs.CV", "eess.SY", "cs.SY"]
+    )
+    keywords: List[str] = Field(default_factory=list)
+    max_results: int = 30
+    category: Optional[str] = "academic-paper"
+    profile: ProfileRoute = None
+
+
 class SourcesConfig(BaseModel):
     """All sources configuration."""
 
@@ -449,6 +464,7 @@ class SourcesConfig(BaseModel):
     ossinsight: OSSInsightConfig = Field(default_factory=OSSInsightConfig)
     gdelt: Optional[GDELTConfig] = None
     google_news: Optional[GoogleNewsConfig] = None
+    arxiv: List[ArXivConfig] = Field(default_factory=list)
 
 
 class WebhookConfig(BaseModel):

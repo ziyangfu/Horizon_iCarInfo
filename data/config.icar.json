@@ -1,0 +1,119 @@
+{
+  "ai": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "api_key_env": "DEEPSEEK_API_KEY",
+    "base_url": "https://api.deepseek.com",
+    "temperature": 0.2,
+    "max_tokens": 4096,
+    "languages": ["zh", "en"]
+  },
+  "display": {
+    "icon_style": "emoji"
+  },
+  "sources": {
+    "arxiv": [
+      {
+        "enabled": true,
+        "categories": ["cs.RO", "cs.CV", "eess.SY", "cs.SY"],
+        "keywords": ["chassis", "steer-by-wire", "brake-by-wire", "suspension", "vehicle dynamics", "autonomous driving"],
+        "max_results": 25,
+        "category": "arxiv-paper",
+        "profile": "icar-info"
+      }
+    ],
+    "github": [
+      {
+        "type": "repo_releases",
+        "owner": "autowarefoundation",
+        "repo": "autoware",
+        "enabled": true,
+        "profile": "icar-info"
+      },
+      {
+        "type": "repo_releases",
+        "owner": "commaai",
+        "repo": "openpilot",
+        "enabled": true,
+        "profile": "icar-info"
+      },
+      {
+        "type": "repo_releases",
+        "owner": "carla-simulator",
+        "repo": "carla",
+        "enabled": true,
+        "profile": "icar-info"
+      }
+    ],
+    "reddit": {
+      "enabled": true,
+      "subreddits": [
+        {
+          "subreddit": "SelfDrivingCars",
+          "sort": "hot",
+          "fetch_limit": 15,
+          "min_score": 20,
+          "category": "reddit-ad",
+          "profile": "icar-info"
+        },
+        {
+          "subreddit": "AutomotiveEngineering",
+          "sort": "hot",
+          "fetch_limit": 15,
+          "min_score": 10,
+          "category": "reddit-chassis",
+          "profile": "icar-info"
+        }
+      ],
+      "users": [],
+      "fetch_comments": 3
+    },
+    "rss": [
+      {
+        "name": "Green Car Congress",
+        "url": "https://www.greencarcongress.com/atom.xml",
+        "enabled": true,
+        "category": "ev-chassis-news",
+        "profile": "icar-info"
+      },
+      {
+        "name": "SAE Industry News",
+        "url": "https://www.sae.org/news/rss",
+        "enabled": true,
+        "category": "sae-standards",
+        "profile": "icar-info"
+      }
+    ],
+    "google_news": {
+      "enabled": true,
+      "query": "线控底盘 OR 线控转向 OR 线控制动 OR 智能底盘 OR 端到端自动驾驶",
+      "language": "zh-CN",
+      "country": "CN",
+      "max_results": 30,
+      "category": "google-news-zh",
+      "profile": "icar-info"
+    }
+  },
+  "collection": {
+    "time_window_hours": 24
+  },
+  "digest": {
+    "max_items": null,
+    "profile_order": [
+      "icar-info"
+    ],
+    "category_groups": {},
+    "default_group": "other",
+    "default_group_limit": null
+  },
+  "processing": {
+    "profiles_dir": "profiles",
+    "default_profile": "icar-info",
+    "profile_settings": {
+      "icar-info": {
+        "threshold": 6.0,
+        "topic_dedup": true
+      }
+    }
+  }
+}
