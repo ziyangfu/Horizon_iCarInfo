@@ -69,7 +69,7 @@ LABELS = {
         ),
     },
     "zh": {
-        "header": "Horizon 每日速递",
+        "header": "智能汽车资讯每日速递",
         "source": "来源",
         "background": "背景",
         "discussion": "社区讨论",
