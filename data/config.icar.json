@@ -7,8 +7,7 @@
     "temperature": 0.2,
     "max_tokens": 4096,
     "languages": [
-      "zh",
-      "en"
+      "zh"
     ]
   },
   "display": {
@@ -46,7 +45,7 @@
         ],
         "max_results": 25,
         "category": "arxiv-paper",
-        "profile": "icar-info"
+        "profile": "icar-papers"
       }
     ],
     "github": [
@@ -127,7 +126,9 @@
   "digest": {
     "max_items": null,
     "profile_order": [
-      "icar-info"
+      "icar-info",
+      "icar-papers",
+      "icar-patents"
     ],
     "category_groups": {},
     "default_group": "other",
@@ -138,6 +139,14 @@
     "default_profile": "icar-info",
     "profile_settings": {
       "icar-info": {
+        "threshold": 6.0,
+        "topic_dedup": true
+      },
+      "icar-papers": {
+        "threshold": 6.0,
+        "topic_dedup": true
+      },
+      "icar-patents": {
         "threshold": 6.0,
         "topic_dedup": true
       }

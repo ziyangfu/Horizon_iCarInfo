@@ -1,0 +1,37 @@
+{
+  "id": "icar-patents",
+  "name": "Frontier Patents",
+  "display_names": {
+    "zh": "前瞻专利",
+    "en": "Frontier Patents"
+  },
+  "match": "match.md",
+  "analysis": "analysis.md",
+  "enrichment": {
+    "prompt": "enrichment.md",
+    "blocks": [
+      {
+        "id": "summary",
+        "type": "section",
+        "tools": [],
+        "primary": true
+      },
+      {
+        "id": "background",
+        "type": "section",
+        "tools": ["web_search"]
+      },
+      {
+        "id": "technical_breakthrough",
+        "type": "section",
+        "tools": ["web_search"]
+      },
+      {
+        "id": "impact",
+        "type": "section",
+        "tools": ["web_search"],
+        "optional": true
+      }
+    ]
+  }
+}
