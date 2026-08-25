@@ -1,422 +1,241 @@
 <div align="center">
-<h1>🌅 Horizon</h1>
+<h1>🌅 Horizon iCarInfo — 智能汽车与底盘资讯每日速递</h1>
 
-<p><strong>Enjoy the News itself. Leave others to Horizon</strong></p>
-
-<a href="https://trendshift.io/repositories/22864?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-22864" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/22864/daily" alt="Thysrael%2FHorizon | Trendshift" width="250" height="55"/></a>
-<a href="https://trendshift.io/repositories/22864?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-22864" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/22864/weekly?language=Python" alt="Thysrael%2FHorizon | Trendshift" width="250" height="55"/></a>
-<a href="https://hellogithub.com/repository/Thysrael/Horizon" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=7a4b606e28e4477998d35851cf4fdddf&claim_uid=rtjnLkYT7ziQJUG" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>
-<br>
+<p><strong>专注智能汽车、线控底盘与自动驾驶前沿技术的情报雷达系统</strong></p>
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
 [![Tool uv](https://img.shields.io/badge/Tool-uv-4B275F?style=for-the-badge&logo=uv&logoColor=white)](https://github.com/astral-sh/uv)
-[![Website](https://img.shields.io/badge/Website-Horizon-263238?style=for-the-badge&logo=homepage&logoColor=white)](https://www.horizon1123.top/)
-[![Daily](https://img.shields.io/github/actions/workflow/status/Thysrael/Horizon/deploy-docs.yml?branch=main&label=Daily&style=for-the-badge&logo=date-fns&logoColor=white)](https://thysrael.github.io/Horizon/)
-[![Commit](https://img.shields.io/github/commit-activity/m/Thysrael/Horizon?label=Commit&style=for-the-badge&logo=github&logoColor=white)](https://github.com/Thysrael/Horizon/commits/main)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Thysrael/Horizon/pulls)
-![Sources Welcome](https://img.shields.io/badge/sources-welcome-f97316?style=for-the-badge&logo=rss&logoColor=white)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge)]()
 
-![Claude](https://img.shields.io/badge/Claude-f0daba?style=flat-square&logo=anthropic&logoColor=black)
-![GPT](https://img.shields.io/badge/GPT-10A37F?style=flat-square&logo=data:image/svg%2bxml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsPSJ3aGl0ZSIgZD0iTTIyLjI4MTkgOS44MjExYTUuOTg0NyA1Ljk4NDcgMCAwIDAtLjUxNTctNC45MTA4IDYuMDQ2MiA2LjA0NjIgMCAwIDAtNi41MDk4LTIuOUE2LjA2NTEgNi4wNjUxIDAgMCAwIDQuOTgwNyA0LjE4MThhNS45ODQ3IDUuOTg0NyAwIDAgMC0zLjk5NzcgMi45IDYuMDQ2MiA2LjA0NjIgMCAwIDAgLjc0MjcgNy4wOTY2IDUuOTggNS45OCAwIDAgMCAuNTExIDQuOTEwNyA2LjA1MSA2LjA1MSAwIDAgMCA2LjUxNDYgMi45MDAxQTUuOTg0NyA1Ljk4NDcgMCAwIDAgMTMuMjU5OSAyNGE2LjA1NTcgNi4wNTU3IDAgMCAwIDUuNzcxOC00LjIwNTggNS45ODk0IDUuOTg5NCAwIDAgMCAzLjk5NzctMi45MDAxIDYuMDU1NyA2LjA1NTcgMCAwIDAtLjc0NzUtNy4wNzI5em0tOS4wMjIgMTIuNjA4MWE0LjQ3NTUgNC40NzU1IDAgMCAxLTIuODc2NC0xLjA0MDhsLjE0MTktLjA4MDQgNC43NzgzLTIuNzU4MmEuNzk0OC43OTQ4IDAgMCAwIC4zOTI3LS42ODEzdi02LjczNjlsMi4wMiAxLjE2ODZhLjA3MS4wNzEgMCAwIDEgLjAzOC4wNTJ2NS41ODI2YTQuNTA0IDQuNTA0IDAgMCAxLTQuNDk0NSA0LjQ5NDR6bS05LjY2MDctNC4xMjU0YTQuNDcwOCA0LjQ3MDggMCAwIDEtLjUzNDYtMy4wMTM3bC4xNDIuMDg1MiA0Ljc4MyAyLjc1ODJhLjc3MTIuNzcxMiAwIDAgMCAuNzgwNiAwbDUuODQyOC0zLjM2ODV2Mi4zMzI0YS4wODA0LjA4MDQgMCAwIDEtLjAzMzIuMDYxNUw5Ljc0IDE5Ljk1MDJhNC40OTkyIDQuNDk5MiAwIDAgMS02LjE0MDgtMS42NDY0ek0yLjM0MDggNy44OTU2YTQuNDg1IDQuNDg1IDAgMCAxIDIuMzY1NS0xLjk3MjhWMTEuNmEuNzY2NC43NjY0IDAgMCAwIC4zODc5LjY3NjVsNS44MTQ0IDMuMzU0My0yLjAyMDEgMS4xNjg1YS4wNzU3LjA3NTcgMCAwIDEtLjA3MSAwbC00LjgzMDMtMi43ODY1QTQuNTA0IDQuNTA0IDAgMCAxIDIuMzQwOCA3Ljg3MnptMTYuNTk2MyAzLjg1NThMMTMuMTAzOCA4LjM2NCAxNS4xMTkyIDcuMmEuMDc1Ny4wNzU3IDAgMCAxIC4wNzEgMGw0LjgzMDMgMi43OTEzYTQuNDk0NCA0LjQ5NDQgMCAwIDEtLjY3NjUgOC4xMDQydi01LjY3NzJhLjc5Ljc5IDAgMCAwLS40MDctLjY2N3ptMi4wMTA3LTMuMDIzMWwtLjE0Mi0uMDg1Mi00Ljc3MzUtMi43ODE4YS43NzU5Ljc3NTkgMCAwIDAtLjc4NTQgMEw5LjQwOSA5LjIyOTdWNi44OTc0YS4wNjYyLjA2NjIgMCAwIDEgLjAyODQtLjA2MTVsNC44MzAzLTIuNzg2NmE0LjQ5OTIgNC40OTkyIDAgMCAxIDYuNjgwMiA0LjY2ek04LjMwNjUgMTIuODYzbC0yLjAyLTEuMTYzOGEuMDgwNC4wODA0IDAgMCAxLS4wMzgtLjA1NjdWNi4wNzQyYTQuNDk5MiA0LjQ5OTIgMCAwIDEgNy4zNzU3LTMuNDUzN2wtLjE0Mi4wODA1TDguNzA0IDUuNDU5YS43OTQ4Ljc5NDggMCAwIDAtLjM5MjcuNjgxM3ptMS4wOTc2LTIuMzY1NGwyLjYwMi0xLjQ5OTggMi42MDY5IDEuNDk5OHYyLjk5OTRsLTIuNTk3NCAxLjQ5OTctMi42MDY3LTEuNDk5N1oiLz48L3N2Zz4=)
-![Gemini](https://img.shields.io/badge/Gemini-8E75B2?style=flat-square&logo=googlegemini&logoColor=white)
 ![DeepSeek](https://img.shields.io/badge/DeepSeek-0A6DC2?style=flat-square&logo=deepseek&logoColor=white)
-![Doubao](https://img.shields.io/badge/Doubao-00D6C2?style=flat-square&logo=bytedance&logoColor=white)
-![MiniMax](https://img.shields.io/badge/MiniMax-FF6F00?style=flat-square&logo=minimax&logoColor=white)
-![OpenClaw](https://img.shields.io/badge/OpenClaw-C83232?style=flat-square&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWxhYmVsPSJQaXhlbCBsb2JzdGVyIj4KICA8cmVjdCB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9Im5vbmUiLz4KICAKICA8ZyBmaWxsPSIjM2EwYTBkIj4KICAgIDxyZWN0IHg9IjEiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjMiLz4KICAgIDxyZWN0IHg9IjIiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjIiIHk9IjgiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjMiIHk9IjkiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjQiIHk9IjIiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjQiIHk9IjEwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+CiAgICA8cmVjdCB4PSI1IiB5PSIyIiB3aWR0aD0iNiIgaGVpZ2h0PSIxIi8+CiAgICA8cmVjdCB4PSIxMSIgeT0iMiIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iMTIiIHk9IjMiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjEyIiB5PSI5IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+CiAgICA8cmVjdCB4PSIxMyIgeT0iNCIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iMTMiIHk9IjgiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjE0IiB5PSI1IiB3aWR0aD0iMSIgaGVpZ2h0PSIzIi8+CiAgICA8cmVjdCB4PSI1IiB5PSIxMSIgd2lkdGg9IjYiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNCIgeT0iMTIiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjExIiB5PSIxMiIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iMyIgeT0iMTMiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjEyIiB5PSIxMyIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNSIgeT0iMTQiIHdpZHRoPSI2IiBoZWlnaHQ9IjEiLz4KICA8L2c+CgogIAogIDxnIGZpbGw9IiNmZjRmNDAiPgogICAgPHJlY3QgeD0iNSIgeT0iMyIgd2lkdGg9IjYiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iMyIgeT0iNSIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjMiIHk9IjYiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxIi8+CiAgICA8cmVjdCB4PSIzIiB5PSI3IiB3aWR0aD0iMTAiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNCIgeT0iOCIgd2lkdGg9IjgiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNSIgeT0iOSIgd2lkdGg9IjYiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNSIgeT0iMTIiIHdpZHRoPSI2IiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjYiIHk9IjEzIiB3aWR0aD0iNCIgaGVpZ2h0PSIxIi8+CiAgPC9nPgoKICAKICA8ZyBmaWxsPSIjZmY3NzVmIj4KICAgIDxyZWN0IHg9IjEiIHk9IjYiIHdpZHRoPSIyIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjIiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjIiIHk9IjciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iMiIgaGVpZ2h0PSIxIi8+CiAgICA8cmVjdCB4PSIxMyIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iMTMiIHk9IjciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICA8L2c+CgogIAogIDxnIGZpbGw9IiMwODEwMTYiPgogICAgPHJlY3QgeD0iNiIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iOSIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogIDwvZz4KICA8ZyBmaWxsPSIjZjVmYmZmIj4KICAgIDxyZWN0IHg9IjYiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjkiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICA8L2c+Cjwvc3ZnPgoK)
-![Ollama](https://img.shields.io/badge/Ollama-FFFFFF?style=flat-square&logo=Ollama&logoColor=black)
+![Claude](https://img.shields.io/badge/Claude-f0daba?style=flat-square&logo=anthropic&logoColor=black)
+![GPT](https://img.shields.io/badge/GPT-10A37F?style=flat-square&logo=openai&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini-8E75B2?style=flat-square&logo=googlegemini&logoColor=white)
 
-📡 Your own AI-powered news radar. Generates daily briefings in English & Chinese. | 构建你专属的 AI 新闻雷达
-
-[📖 Live Demo](https://thysrael.github.io/Horizon/) · [📋 Configuration Guide](https://thysrael.github.io/Horizon/configuration) · [简体中文](README_zh.md) · [日本語](README_ja.md)
+📡 全自动追踪全网学术论文、工程开源项目、线控底盘技术发布与行业专利，AI 自动评分、背景知识扩充与多版块每日简报生成系统。
 
 </div>
 
-## Screenshots
+---
 
-<table>
-<tr>
-<td width="50%">
-<p align="center"><strong>Ranked Daily Briefing</strong></p>
-<img src="docs/assets/overview_en.png" alt="Daily Overview" />
-</td>
-<td width="50%">
-<p align="center"><strong>Context, Summary & Discussion</strong></p>
-<img src="docs/assets/one_news_en.png" alt="News Detail" />
-</td>
-</tr>
-</table>
+## 📌 项目简介
 
-<details>
-<summary><strong>More Screenshots</strong></summary>
-<br>
-<table>
-<tr>
-<td width="33.33%">
-<p align="center"><strong>Terminal Output</strong></p>
-<img src="docs/assets/terminal_log.png" alt="Terminal Output" />
-</td>
-<td width="33.33%">
-<p align="center"><strong>Feishu Notification</strong></p>
-<img src="docs/assets/feishu_en.png" alt="Feishu Notification" />
-</td>
-<td width="33.33%">
-<p align="center"><strong>Email Delivery</strong></p>
-<img src="docs/assets/email.png" alt="Email Delivery" />
-</td>
-</tr>
-</table>
-</details>
+**Horizon iCarInfo (智能汽车与底盘前瞻资讯系统)** 是一套基于 AI 驱动的信息聚合与日报生成系统。它为汽车工程师、底盘控制研究员、自动驾驶算法专家以及行业分析师量身打造，旨在过滤互联网上的营销噪音，每日精准推送最具技术价值与工程深度的资讯简报。
 
-## Why Horizon?
+系统自动从 **ArXiv、GitHub、Reddit、专业 RSS、Google News** 等全网多源抓取最新内容，利用大语言模型（如 DeepSeek / Claude / GPT 等）进行技术评分、重复内容去重、背景知识检索增强（RAG），并按三大核心版块自动格式化排版，最终通过**电子邮件订阅、GitHub Pages 网页、飞书/钉钉 Webhook** 等渠道自动投递。
 
-Good news is scattered; bad news is endless. Horizon gives you a personal first pass over Hacker News, Reddit, Telegram, RSS, and GitHub: it fetches, deduplicates, scores, filters, and enriches stories with background context and community discussion.
+---
 
-But Horizon is not just another summarizer. AI is great at reducing noise, but news still needs human taste: the sources you trust, the comments that change how you read a story, and the hidden gems only people can share. Horizon keeps that human layer in the loop with customizable sources, processing profiles, models, languages, delivery channels, comment summaries, and a community source hub.
+## 📐 三大核心版块布局
 
-## Features
+每日生成的速递简报严格按照以下三大专业版块白名单进行编排：
 
-- **📡 Watch Your Own Sources** — Track Hacker News, RSS, Reddit, Telegram, Twitter/X, GitHub releases or user activity, and OpenBB financial news watchlists in one pipeline
-- **🤖 Turn Noise Into a Reading List** — Analyze each item with a stable processing profile and apply your own filter threshold
-- **🔗 Merge Repeated Stories** — Deduplicate the same story across platforms before it reaches your briefing
-- **🔍 Understand the Background** — Add web-researched context for unfamiliar concepts, companies, projects, and technical terms
-- **💬 Read the Conversation** — Collect and summarize community comments from Hacker News, Reddit, and other supported sources
-- **🌐 Publish in Two Languages** — Generate English and Chinese daily briefings from the same source set
-- **📝 Ship a Daily Site** — Publish generated Markdown as a GitHub Pages daily briefing site
-- **📧 Deliver by Email** — Run a self-hosted SMTP/IMAP newsletter with automatic subscribe and unsubscribe handling
-- **🔔 Push to Chat or Automations** — Send templated results to Feishu/Lark, DingTalk, Slack, Discord, or custom webhook endpoints
-- **🧙 Start From Your Interests** — Use the setup wizard to generate a personalized source configuration
-- **⚙️ Tune the Radar** — Customize sources, processing profiles, models, languages, and delivery channels
+```
+├─ 一、智能汽车与底盘前瞻资讯 (icar-info)
+│   ├── 线控底盘：线控转向 (SBW)、线控制动 (EHB/EMB)、主动/空气悬架、底盘域控制器 (VMC/CDC)
+│   ├── 智驾硬件与平台：自动驾驶芯片 (如 NPU/GPU)、传感器融合、域控拓扑
+│   ├── 主机厂与 Tier-1 动态：特斯拉、华为、比亚迪、蔚来、博世、大陆、采埃孚等最新工程发布
+│   └── 开源与标准：Autoware, Openpilot, Carla 开源更新，SAE/ISO 26262 功能安全标准
+│
+├─ 二、前沿论文 (icar-papers)
+│   ├── 学术预印本 (ArXiv)：cs.RO, cs.CV, eess.SY, cs.SY 等领域最新论文
+│   ├── 顶级期刊与会议：IEEE T-IV, IEEE T-MECH, ICRA, IROS, CVPR 等
+│   └── 算法突破：端到端智驾模型 (E2E AD)、世界动作模型 (World Models)、Occupancy 栅格、轨迹规划
+│
+└─ 三、前瞻专利 (icar-patents)
+    └── 国内外最新公开与授权专利：线控系统冗余控制、故障容错架构、智驾安全降级策略等
+```
 
-## How It Works
+---
+
+## 💡 核心功能特性
+
+- 📡 **多源情报协同检索**：集成 ArXiv 学术库、GitHub Release、Reddit 工程社区（`r/SelfDrivingCars`, `r/AutomotiveEngineering`）、专业科技 RSS（Green Car Congress, SAE）及 Google News。
+- 🤖 **AI 智能评分与去重**：结合定制化的评估 Prompt，根据技术创新度、工程可行性与行业影响进行多维评分（0-10 分），自动过滤无技术实质的营销公关文，并合并多平台重复报道。
+- 🔎 **背景知识深度扩充**：为选中的每条重要资讯补充「技术背景」、「技术突破」、「行业影响」与「社区讨论」等深度上下文。
+- ✉️ **自动化邮件订阅服务**：内置完整的 SMTP/IMAP 邮件服务，支持用户通过发送关键字（如 `SUBSCRIBE` / `UNSUBSCRIBE`）自动加入或退出订阅列表（[data/subscribers.json](file:///home/fzy/Documents/03_competition/Horizon_iCarInfo/data/subscribers.json)），并定时群发 HTML/Markdown 双语日报。
+- 🛡️ **严格版块白名单**：内置过滤器保证生成的报告仅包含汽车底盘与智驾相关的三大目标版块，自动剔除无关泛科技新闻与博客。
+- 🔔 **多渠道发布支持**：支持生成 GitHub Pages 静态网站、推送飞书/钉钉/Discord 机器人，并提供 MCP Server (Model Context Protocol) 接口供 AI 助手调用。
+
+---
+
+## ⚙️ 系统工作流程
 
 ```mermaid
-%%{init: {
-  "theme": "base",
-  "themeVariables": {
-    "fontFamily": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
-    "fontSize": "18px",
-    "primaryTextColor": "#2d2a3e",
-    "primaryBorderColor": "#e0dbd3",
-    "lineColor": "#7c7891",
-    "tertiaryColor": "#faf8f5",
-    "clusterBkg": "#f3f0eb",
-    "clusterBorder": "#e0dbd3"
-  }
-}}%%
+%%{init: { "theme": "base", "themeVariables": { "fontFamily": "ui-sans-serif, system-ui, sans-serif", "fontSize": "16px" } }}%%
 flowchart LR
-    classDef config fill:#fbbf24,stroke:#d4a017,color:#2d2a3e,stroke-width:1.5px;
-    classDef source fill:#ede7fb,stroke:#6d4aaa,color:#2d2a3e,stroke-width:1.5px;
-    classDef process fill:#ffe8db,stroke:#e0652e,color:#2d2a3e,stroke-width:1.5px;
-    classDef output fill:#f9d7e5,stroke:#be185d,color:#2d2a3e,stroke-width:1.5px;
-
-    config["⚙️ Config<br/>sources, profiles, models, outputs"]
-
-    subgraph sources["Configured Sources"]
-        rss["📡 RSS"]
-        hn["📰 Hacker News"]
-        reddit["💬 Reddit"]
-        telegram["✈️ Telegram"]
-        twitter["🐦 Twitter / X"]
-        github["🐙 GitHub"]
-        openbb["💹 OpenBB"]
+    subgraph sources["数据源接入"]
+        arxiv["📄 ArXiv 论文"]
+        github["🐙 GitHub 开源"]
+        reddit["💬 Reddit 社区"]
+        rss["📡 专业 RSS"]
+        gnews["📰 Google News"]
     end
 
-    fetch["📥 Fetch"]
-    dedup["🧹 Deduplicate"]
-    score["🤖 AI Score & Filter"]
-    enrich["🔎 Enrich"]
-    summary["📝 Summarize"]
+    fetch["📥 增量抓取"]
+    dedup["🧹 跨源去重"]
+    score["🤖 AI 评分过滤"]
+    enrich["🔎 背景知识增强"]
+    summarize["📝 三版块格式化排版"]
 
-    subgraph outputs["Outputs"]
-        direction TB
-        site["🌐 Pages"]
-        email["📧 Email"]
-        webhook["🔔 Webhooks"]
-        mcp["🧩 MCP"]
+    subgraph outputs["简报投递渠道"]
+        email["📧 邮件订阅群发"]
+        site["🌐 GitHub Pages"]
+        webhook["🔔 飞书/钉钉 Webhook"]
+        mcp["🧩 MCP Server"]
     end
 
-    config --> fetch
-    rss --> fetch
-    hn --> fetch
-    reddit --> fetch
-    telegram --> fetch
-    twitter --> fetch
+    arxiv --> fetch
     github --> fetch
-    openbb --> fetch
+    reddit --> fetch
+    rss --> fetch
+    gnews --> fetch
 
-    fetch --> dedup --> score --> enrich --> summary
-    config --> score
-    config --> summary
-    config --> outputs
-
-    summary --> site
-    summary --> email
-    summary --> webhook
-    summary --> mcp
-
-    class config config
-    class rss,hn,reddit,telegram,twitter,github,openbb source
-    class fetch,dedup,score,enrich,summary process
-    class site,email,webhook,mcp output
+    fetch --> dedup --> score --> enrich --> summarize
+    summarize --> email
+    summarize --> site
+    summarize --> webhook
+    summarize --> mcp
 ```
 
-1. **Define** — Configure sources, processing profiles, models, languages, and delivery.
-2. **Fetch** — Pull latest content from all configured sources concurrently.
-3. **Deduplicate** — Merge items pointing to the same story or URL across platforms.
-4. **Analyze & Filter** — Select a profile, analyze each item with its prompt, and apply the configured user threshold.
-5. **Enrich** — Generate the profile's configured content blocks, using only tools allowed for each block.
-6. **Summarize** — Render localized titles, leads, sections, and cited sources as a Markdown briefing.
-7. **Deliver** — Publish the result to GitHub Pages, email, webhooks such as Feishu, MCP, or local files.
+---
 
-## Quick Start
+## 🚀 快速上手
 
-### 1. Install
+### 1. 环境准备与依赖安装
 
-**Option A: Local Installation**
+确保已安装 [uv](https://github.com/astral-sh/uv)（推荐）或 Python 3.11+：
 
 ```bash
-git clone https://github.com/Thysrael/Horizon.git
-cd Horizon
+# 克隆仓库
+git clone https://github.com/Horizon_iCarInfo.git
+cd Horizon_iCarInfo
 
-# Install with uv (recommended)
+# 使用 uv 一键安装依赖
 uv sync
-
-# Install test/development extras when needed
-uv sync --extra dev
-
-# Or with pip
-pip install -e .
 ```
 
-`dev` is currently defined as an optional extra in `pyproject.toml`, so use `uv sync --extra dev` for pytest and other development dependencies.
+### 2. 环境变量配置
 
-If you want the optional OpenBB financial-news source, install its extra too:
+创建 `.env` 文件并填入 API Key 和邮箱授权码：
 
 ```bash
-uv sync --extra openbb
+cp .env.example .env
 ```
 
-If `openbb` pulls packages without wheels on your machine, install the SDK manually with binaries only:
+编辑 `.env`：
 
-```bash
-uv pip install --only-binary=:all: openbb openbb-benzinga
+```env
+# DeepSeek 大模型 API Key（或 OPENAI_API_KEY / ANTHROPIC_API_KEY）
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+
+# 发件邮箱密码或 SMTP 授权码（QQ 邮箱需在网页端生成 16 位授权码）
+EMAIL_PASSWORD=your_16_digit_smtp_authorization_code
 ```
 
-**Option B: Docker**
+### 3. 主配置文件说明
 
-```bash
-git clone https://github.com/Thysrael/Horizon.git
-cd Horizon
+项目主配置文件位于 [data/config.icar.json](file:///home/fzy/Documents/03_competition/Horizon_iCarInfo/data/config.icar.json)，包含了数据源、AI 模型参数、三大版块顺序与邮箱配置：
 
-# Optional: build with comma-separated extras before the first run
-docker compose build --build-arg EXTRAS=trafilatura horizon
-```
-
-Multiple extras may be supplied as `EXTRAS=trafilatura,openbb`. The `twitter` extra also requires a Playwright browser and system packages, which the current Dockerfile does not install.
-
-### 2. Configure
-
-**Option A: Interactive wizard (recommended)**
-
-```bash
-uv run horizon-wizard
-```
-
-The wizard asks about your interests (e.g. "LLM inference", "嵌入式", "web security") and auto-generates `data/config.json`. See [Interactive Wizard](docs/configuration.md#interactive-wizard) for CLI options.
-
-**Option B: Manual configuration**
-
-```bash
-cp .env.example .env          # Add your API keys
-cp data/config.example.json data/config.json  # Customize your sources
-```
-
-Minimal manual configuration:
-
-```jsonc
+```json
 {
   "ai": {
-    "provider": "openai",
-    "model": "gpt-4",
-    "api_key_env": "OPENAI_API_KEY"
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "api_key_env": "DEEPSEEK_API_KEY",
+    "languages": ["zh"]
   },
-  "sources": {
-    "rss": [
-      {
-        "name": "Simon Willison",
-        "url": "https://simonwillison.net/atom/everything/",
-        "profile": "tech-news"
-      }
-    ]
+  "email": {
+    "enabled": true,
+    "smtp_server": "smtp.qq.com",
+    "smtp_port": 465,
+    "email_address": "438484102@qq.com",
+    "password_env": "EMAIL_PASSWORD",
+    "sender_name": "智能汽车每日速递"
   },
-  "processing": {
-    "profiles_dir": "profiles",
-    "default_profile": "tech-news",
-    "profile_settings": {
-      "tech-news": {
-        "threshold": 7.0,
-        "topic_dedup": true
-      }
-    }
-  }
-}
-```
-
-An explicit source `profile` uses that profile directly. Omit it or set it to
-`"auto"` to let AI match the item against all available profiles. Set it to an
-array such as `["tech-news", "finance-news"]` to restrict AI matching to those
-profiles. See
-[Processing Profiles](docs/profiles.md) for profile structure and behavior.
-Per-profile user preferences such as score thresholds and topic deduplication
-belong in `processing.profile_settings`, not in the profile files.
-
-**Balanced digest (optional)**
-
-Limit the final digest size and prevent one category from dominating the
-results. Categories come from source configuration such as
-`sources.rss[].category`.
-
-```jsonc
-{
   "digest": {
-    "max_items": 20,
-    "category_groups": {
-      "ai": {
-        "limit": 5,
-        "categories": ["ai-news", "ai-tools", "machine-learning"]
-      },
-      "finance": {
-        "limit": 5,
-        "categories": ["finance", "business", "equities"]
-      }
-    },
-    "default_group": "other",
-    "default_group_limit": 3
+    "profile_order": [
+      "icar-info",
+      "icar-papers",
+      "icar-patents"
+    ]
   }
 }
 ```
 
-Group limits are applied after profile filtering and before enrichment. If
-`category_groups` and `max_items` are omitted, no balanced digest limits apply.
-
-`api_key_env` must be the name of an environment variable, not the API key
-itself. Put the real secret in `.env`:
+可以将专用的配置文件设为默认配置文件：
 
 ```bash
-OPENAI_API_KEY=sk-your-key
+cp data/config.icar.json data/config.json
 ```
 
-For Gemini, use `GOOGLE_API_KEY`:
+---
 
-```jsonc
-{
-  "ai": {
-    "provider": "gemini",
-    "model": "gemini-2.0-flash",
-    "api_key_env": "GOOGLE_API_KEY"
-  }
-}
-```
+## 💻 运行与测试指令
 
-Any string value in `data/config.json` can reference environment variables with `${VAR_NAME}`. This is useful for values such as `ai.base_url`, private RSS feed URLs, webhook endpoints, or custom header templates.
+### 1. 执行全流程每日速递生成
 
-For the full reference, see the [Configuration Guide](docs/configuration.md).
-
-### 3. Run
-
-**A. Local installation**
+抓取过去 24 小时的最新资讯并生成速递简报：
 
 ```bash
-uv run horizon [OPTIONS]
+uv run horizon -c data/config.icar.json --hours 24
 ```
 
-**B. Docker**
+生成后的 Markdown 报告将保存在 `data/summaries/horizon-YYYY-MM-DD-zh.md`。
+
+### 2. 单独测试邮件发送功能（无需 AI 抓取）
+
+如果您需要验证 SMTP 邮件发送功能是否正常，可以使用以下单行 Python 指令：
 
 ```bash
-docker compose run --rm horizon [OPTIONS]
+uv run python -c "
+from dotenv import load_dotenv
+from src.storage.manager import StorageManager
+from src.services.email import EmailManager
+
+load_dotenv()
+storage = StorageManager(config_path='data/config.icar.json')
+config = storage.load_config()
+subscribers = storage.load_subscribers()
+
+email_mgr = EmailManager(config.email)
+email_mgr.send_daily_summary(
+    '# 智能汽车每日速递 - 邮件测试\n\n这是一封测试邮件，用于验证邮箱投递功能。',
+    '【测试】智能汽车每日速递邮件通道验证',
+    subscribers
+)
+print('测试邮件发送完成！')
+"
 ```
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--hours N` | 24 | Fetch from last N hours |
-| `-d`, `--data-dir PATH` | `data` | Path to the data directory |
-| `-c`, `--config PATH` | `<data-dir>/config.json` | Path to config file |
-| `-l`, `--log-level LEVEL` | `WARNING` | Logging level (DEBUG/INFO/WARNING/ERROR/CRITICAL) |
+---
 
-`--data-dir` changes the state directory, including summaries, subscribers, and the default config location; `--config` changes only the config file. The generated report is saved to `data/summaries/` (or `<data-dir>/summaries/` if `--data-dir` is set). See [Configuration Paths](docs/configuration.md#configuration-paths) for combining both flags and initializing a custom config location.
+## 📁 项目目录结构
 
-### 4. Automate (Optional)
+```
+.
+├── data/
+│   ├── config.icar.json     # 智能汽车与底盘速递主配置文件
+│   ├── subscribers.json     # 邮件订阅者列表
+│   └── summaries/           # 每日生成的 Markdown 简报保存目录
+├── profiles/
+│   ├── icar-info/           # 「智能汽车与底盘前瞻资讯」Profile 提示词与配置
+│   ├── icar-papers/         # 「前沿论文」Profile 提示词与配置
+│   └── icar-patents/        # 「前瞻专利」Profile 提示词与配置
+├── src/
+│   ├── ai/                  # AI 客户端、分析器、总结器与 Prompt 管理
+│   ├── scrapers/            # 各数据源抓取器 (ArXiv, GitHub, RSS, Reddit, Google News)
+│   ├── services/            # 邮件服务 (SMTP/IMAP) 与 Webhook 机器人通知
+│   ├── storage/             # 配置加载与存储管理器
+│   ├── main.py              # CLI 入口
+│   └── orchestrator.py      # 工作流主调度器
+└── scripts/
+    └── daily-run.sh         # 每日定时自动化运行与 Pages 部署脚本
+```
 
-Horizon works great as a **GitHub Actions** cron job. See [`.github/workflows/daily-summary.yml`](.github/workflows/daily-summary.yml) for a ready-to-use workflow that generates and deploys your daily briefing to GitHub Pages automatically.
+---
 
-## Supported Sources
+## 📄 开源许可证
 
-| Source | What it fetches | Comments |
-|--------|----------------|----------|
-| **Hacker News** | Top stories by score | Yes (top N comments) |
-| **RSS / Atom** | Any RSS or Atom feed | — |
-| **Reddit** | Subreddits + user posts | Yes (top N comments) |
-| **Telegram** | Public channel messages | — |
-| **Twitter / X** | Tweets from specific users | Yes (top N replies) |
-| **GitHub** | User events & repo releases | — |
-| **OpenBB** | Financial company news by watchlist/provider | — |
-
-## Where Your Briefing Goes
-
-Horizon can publish or deliver the generated briefing in several ways:
-
-| Channel | What it does |
-|---------|--------------|
-| **GitHub Pages Daily Site** | Copies generated Markdown into `docs/` so GitHub Pages can publish a daily-updated briefing site |
-| **Email Subscription** | Sends the daily briefing to subscribers and handles subscribe/unsubscribe requests through SMTP/IMAP |
-| **Webhook Notification** | Pushes success or failure results to Feishu/Lark, DingTalk, Slack, Discord, or any custom webhook endpoint |
-| **MCP Server** | Exposes Horizon pipeline steps as tools so AI assistants can fetch, score, filter, enrich, summarize, and run the full workflow |
-
-For setup details, see the [Configuration Guide](docs/configuration.md). For MCP tool references and client setup, see [`src/mcp/README.md`](src/mcp/README.md) and [`src/mcp/integration.md`](src/mcp/integration.md).
-
-## Supported By
-
-Horizon is an open-source project maintained in spare time. If you'd like to support the project or be listed here, feel free to [open an issue](https://github.com/Thysrael/Horizon/issues/new) or [email me](mailto:thysrael@163.com).
-
-| Supporter | Details |
-|-----------|---------|
-| [<img src="docs/assets/compshare-logo.png" alt="Compshare / 优云智算" width="220" />](https://www.compshare.cn/?ytag=GPU_YY_git_Horizon) | Compshare currently supports Horizon. Compshare is UCloud's AI cloud platform, offering cost-effective monthly and pay-as-you-go domestic model agent plans starting from RMB 49/month, as well as stable officially relayed overseas models. It supports Claude Code, Codex, and API usage, with enterprise-grade high concurrency, 24/7 technical support, and self-service invoicing.<br><br>Register through their [link](https://www.compshare.cn/?ytag=GPU_YY_git_Horizon) to receive a free RMB 5 trial credit. |
-
-## Documentation
-
-| Guide | Description |
-|-------|-------------|
-| [Configuration](docs/configuration.md) | AI providers, sources, profiles, filtering, email, webhook, GitHub Pages, and MCP setup |
-| [Processing Profiles](docs/profiles.md) | Profile routing, prompts, runtime filtering preferences, enrichment blocks, and tools |
-| [Scoring](docs/scoring.md) | How Horizon evaluates and ranks news items |
-| [Scrapers](docs/scrapers.md) | Source scraper details and extension notes |
-| [Extractors](docs/extractors.md) | Full article extraction for RSS sources |
-| [MCP Tools](src/mcp/README.md) | Tool reference for MCP-compatible clients |
-
-## Project Status
-
-Horizon already supports the full daily briefing loop: multi-source collection, profile-driven analysis and enrichment, deduplication, comment summaries, bilingual generation, GitHub Pages publishing, email delivery, webhook delivery, Docker deployment, MCP integration, and the setup wizard.
-
-Planned improvements:
-
-- More source types, such as Discord
-- Publish releases on GitHub
-- Publish the package to PyPI for `pip install`
-
-## Contributing
-
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for code, documentation, and source-sharing guidelines.
-
-### Share Sources
-
-Want to share valuable source discoveries with the Horizon community? Please submit them through **[horizon1123.top](https://horizon1123.top)**.
-
-## Acknowledgements
-
-- Special thanks to [LINUX.DO](https://linux.do/) for providing a promotion platform.
-- Special thanks to [HelloGitHub](https://hellogithub.com/) for valuable guidance and suggestions.
-- Special thanks to [AIGC Link](https://xhslink.com/m/80ngts127cA) for the promotions on XiaoHongShu.
-
-## License
-
-[MIT](LICENSE)
+本项目采用 [MIT License](LICENSE) 许可证。
