@@ -7,9 +7,10 @@ import logging
 import os
 import smtplib
 import ssl
+from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import parseaddr
+from email.utils import formataddr, parseaddr
 from typing import List
 
 try:
@@ -40,6 +41,14 @@ class EmailManager:
             self.console.print(
                 f"[yellow]Warning: Environment variable {self.config.password_env} not set. Email features may fail.[/yellow]"
             )
+
+    def _get_from_header(self) -> str:
+        """Returns RFC 2047 / RFC 5322 compliant From header."""
+        if self.config.sender_name:
+            return formataddr(
+                (str(Header(self.config.sender_name, "utf-8")), self.config.email_address)
+            )
+        return self.config.email_address
 
     def check_subscriptions(self, storage_manager):
         """Checks inbox for subscription requests and updates subscriber list."""
@@ -205,9 +214,7 @@ class EmailManager:
                 for subscriber in subscribers:
                     msg = MIMEMultipart("alternative")
                     msg["Subject"] = subject
-                    msg["From"] = (
-                        f"{self.config.sender_name} <{self.config.email_address}>"
-                    )
+                    msg["From"] = self._get_from_header()
                     msg["To"] = subscriber
 
                     text_part = MIMEText(cleaned_summary, "plain")
@@ -235,7 +242,7 @@ class EmailManager:
 
                 msg = MIMEText(body)
                 msg["Subject"] = subject
-                msg["From"] = f"{self.config.sender_name} <{self.config.email_address}>"
+                msg["From"] = self._get_from_header()
                 msg["To"] = to_email
 
                 server.send_message(msg)

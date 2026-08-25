@@ -6,17 +6,44 @@
     "base_url": "https://api.deepseek.com",
     "temperature": 0.2,
     "max_tokens": 4096,
-    "languages": ["zh", "en"]
+    "languages": [
+      "zh",
+      "en"
+    ]
   },
   "display": {
     "icon_style": "emoji"
+  },
+  "email": {
+    "enabled": true,
+    "smtp_server": "smtp.qq.com",
+    "smtp_port": 465,
+    "imap_server": "imap.qq.com",
+    "imap_port": 993,
+    "email_address": "438484102@qq.com",
+    "password_env": "EMAIL_PASSWORD",
+    "sender_name": "智能汽车每日速递",
+    "subscribe_keyword": "SUBSCRIBE",
+    "unsubscribe_keyword": "UNSUBSCRIBE"
   },
   "sources": {
     "arxiv": [
       {
         "enabled": true,
-        "categories": ["cs.RO", "cs.CV", "eess.SY", "cs.SY"],
-        "keywords": ["chassis", "steer-by-wire", "brake-by-wire", "suspension", "vehicle dynamics", "autonomous driving"],
+        "categories": [
+          "cs.RO",
+          "cs.CV",
+          "eess.SY",
+          "cs.SY"
+        ],
+        "keywords": [
+          "chassis",
+          "steer-by-wire",
+          "brake-by-wire",
+          "suspension",
+          "vehicle dynamics",
+          "autonomous driving"
+        ],
         "max_results": 25,
         "category": "arxiv-paper",
         "profile": "icar-info"
