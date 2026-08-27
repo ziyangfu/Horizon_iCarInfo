@@ -1,9 +1,9 @@
 {
   "ai": {
-    "provider": "deepseek",
-    "model": "deepseek-chat",
-    "api_key_env": "DEEPSEEK_API_KEY",
-    "base_url": "https://api.deepseek.com",
+    "provider": "ollama",
+    "model": "qwen3.8:27b-q4_K_M",
+    "api_key_env": "OLLAMA_API_KEY",
+    "base_url": "http://192.168.1.10:11434/v1",
     "temperature": 0.2,
     "max_tokens": 4096,
     "languages": [
