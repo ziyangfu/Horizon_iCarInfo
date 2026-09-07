@@ -22,6 +22,7 @@ class SourceType(str, Enum):
     GOOGLE_NEWS = "google_news"
     ARXIV = "arxiv"
     PATENTS = "patents"
+    CROSSREF = "crossref"
 
 
 class SourceDefinition(NamedTuple):
@@ -45,6 +46,7 @@ SOURCE_REGISTRY = {
     SourceType.GOOGLE_NEWS.value: SourceDefinition("google_news"),
     SourceType.ARXIV.value: SourceDefinition("arxiv", config_is_list=True),
     SourceType.PATENTS.value: SourceDefinition("patents", config_is_list=True),
+    SourceType.CROSSREF.value: SourceDefinition("crossref", config_is_list=True),
 }
 
 ProfileRoute = Optional[Union[str, List[str]]]
@@ -465,6 +467,19 @@ class PatentQueryConfig(BaseModel):
     profile: ProfileRoute = None
 
 
+class CrossrefJournalConfig(BaseModel):
+    """Crossref academic journal query configuration."""
+
+    enabled: bool = True
+    issn: str = "2624-8921"
+    journal_name: Optional[str] = "MDPI Vehicles"
+    keywords: List[str] = Field(default_factory=list)
+    max_results: int = 15
+    category: Optional[str] = "mdpi-paper"
+    profile: ProfileRoute = "icar-papers"
+    mailto: Optional[str] = None
+
+
 class SourcesConfig(BaseModel):
     """All sources configuration."""
 
@@ -480,6 +495,7 @@ class SourcesConfig(BaseModel):
     google_news: Optional[GoogleNewsConfig] = None
     arxiv: List[ArXivConfig] = Field(default_factory=list)
     patents: List[PatentQueryConfig] = Field(default_factory=list)
+    crossref: List[CrossrefJournalConfig] = Field(default_factory=list)
 
 
 class WebhookConfig(BaseModel):

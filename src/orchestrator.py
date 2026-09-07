@@ -28,6 +28,7 @@ from .scrapers.gdelt import GDELTScraper
 from .scrapers.google_news import GoogleNewsScraper
 from .scrapers.arxiv import ArXivScraper
 from .scrapers.google_patents import GooglePatentsScraper
+from .scrapers.crossref import CrossrefScraper
 from .ai.client import create_ai_client
 from .ai.analyzer import ContentAnalyzer
 from .ai.summarizer import DailySummarizer
@@ -508,6 +509,14 @@ class HorizonOrchestrator:
                         name = f"Patents ({patent_cfg.category or idx+1})"
                         tasks.append(self._fetch_with_progress(name, patent_scraper, since))
 
+            # Crossref academic journals (e.g. MDPI Vehicles)
+            if self.config.sources.crossref:
+                for idx, crossref_cfg in enumerate(self.config.sources.crossref):
+                    if crossref_cfg.enabled:
+                        crossref_scraper = CrossrefScraper(crossref_cfg, client)
+                        name = f"Crossref ({crossref_cfg.journal_name or crossref_cfg.issn or idx+1})"
+                        tasks.append(self._fetch_with_progress(name, crossref_scraper, since))
+
             # Fetch all concurrently
             outcomes = await asyncio.gather(*tasks)
             self.last_fetch_report = FetchReport(outcomes=list(outcomes))
@@ -584,6 +593,9 @@ class HorizonOrchestrator:
             return f"arxiv:{meta['arxiv_id']}"
         if meta.get("patent_id"):
             return f"patent:{meta['patent_id']}"
+        if meta.get("doi"):
+            journal = meta.get("journal", "crossref")
+            return f"{journal}:{meta['doi']}"
         if meta.get("domain"):
             return meta["domain"]
         return item.author or "unknown"
