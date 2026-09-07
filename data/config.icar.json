@@ -165,7 +165,15 @@
       "icar-papers",
       "icar-patents"
     ],
-    "category_groups": {},
+    "category_groups": {
+      "papers": {
+        "name": "前沿论文",
+        "limit": 3,
+        "categories": [
+          "arxiv-paper"
+        ]
+      }
+    },
     "default_group": "other",
     "default_group_limit": null
   },
