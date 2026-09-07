@@ -2,6 +2,7 @@
 
 from ...models import ContentItem
 from ...processing.profiles import LoadedProfile
+from ...processing.whitelist import format_vmc_whitelist_prompt
 from .common import EVIDENCE_RULES, UNTRUSTED_INPUT_RULE
 
 ANALYSIS_RULES = f"""You are a content curator evaluating an item under the supplied processing profile.
@@ -13,11 +14,13 @@ ANALYSIS_RULES = f"""You are a content curator evaluating an item under the supp
 
 
 def analysis_system_prompt(profile: LoadedProfile) -> str:
+    whitelist_block = format_vmc_whitelist_prompt()
+    whitelist_section = f"\n\n# User-Configurable Topic & Supplier Whitelist\n\n{whitelist_block}" if whitelist_block else ""
     return f"""{ANALYSIS_RULES}
 
 # Profile policy
 
-{profile.analysis_prompt}
+{profile.analysis_prompt}{whitelist_section}
 
 # Output contract
 

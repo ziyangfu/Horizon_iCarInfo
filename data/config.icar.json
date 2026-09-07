@@ -36,12 +36,15 @@
           "cs.SY"
         ],
         "keywords": [
-          "chassis",
+          "vehicle motion control",
+          "chassis control",
+          "control allocation",
+          "sideslip angle estimation",
+          "torque vectoring",
           "steer-by-wire",
           "brake-by-wire",
-          "suspension",
-          "vehicle dynamics",
-          "autonomous driving"
+          "active suspension",
+          "vehicle dynamics"
         ],
         "max_results": 25,
         "category": "arxiv-paper",
@@ -147,7 +150,7 @@
     ],
     "google_news": {
       "enabled": true,
-      "query": "线控底盘 OR 线控转向 OR 线控制动 OR 智能底盘 OR 端到端自动驾驶",
+      "query": "线控底盘 OR 线控转向 OR 线控制动 OR 智能底盘 OR 整车运动控制 OR 底盘域控 OR 伯特利 线控 OR 同驭科技 OR 拿森科技 OR 博世底盘 OR 采埃孚底盘 OR 大陆制动",
       "language": "zh-CN",
       "country": "CN",
       "max_results": 30,
