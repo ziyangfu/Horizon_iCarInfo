@@ -5,7 +5,7 @@
     "api_key_env": "OLLAMA_API_KEY",
     "base_url": "http://192.168.1.10:11434/v1",
     "temperature": 0.2,
-    "max_tokens": 4096,
+    "max_tokens": 256000,
     "languages": [
       "zh"
     ]
@@ -108,6 +108,41 @@
         "enabled": true,
         "category": "sae-standards",
         "profile": "icar-info"
+      },
+      {
+        "name": "盖世汽车 - 智能网联",
+        "url": "https://auto.gasgoo.com/Rss/ClassRss.aspx?ClassId=601",
+        "enabled": true,
+        "category": "gasgoo-smart-connected",
+        "profile": "icar-info"
+      },
+      {
+        "name": "盖世汽车 - 新技术",
+        "url": "https://auto.gasgoo.com/Rss/ClassRss.aspx?ClassId=409",
+        "enabled": true,
+        "category": "gasgoo-new-tech",
+        "profile": "icar-info"
+      },
+      {
+        "name": "盖世汽车 - 供应链",
+        "url": "https://auto.gasgoo.com/Rss/ClassRss.aspx?ClassId=103",
+        "enabled": true,
+        "category": "gasgoo-supply-chain",
+        "profile": "icar-info"
+      },
+      {
+        "name": "盖世汽车 - 新能源",
+        "url": "https://auto.gasgoo.com/Rss/ClassRss.aspx?ClassId=501",
+        "enabled": true,
+        "category": "gasgoo-nev",
+        "profile": "icar-info"
+      },
+      {
+        "name": "盖世汽车 - 盖世原创",
+        "url": "https://auto.gasgoo.com/Rss/ClassRss.aspx?ClassId=-1",
+        "enabled": true,
+        "category": "gasgoo-original",
+        "profile": "icar-info"
       }
     ],
     "google_news": {
@@ -139,15 +174,15 @@
     "default_profile": "icar-info",
     "profile_settings": {
       "icar-info": {
-        "threshold": 6.0,
+        "threshold": 4.0,
         "topic_dedup": true
       },
       "icar-papers": {
-        "threshold": 6.0,
+        "threshold": 4.0,
         "topic_dedup": true
       },
       "icar-patents": {
-        "threshold": 6.0,
+        "threshold": 4.0,
         "topic_dedup": true
       }
     }

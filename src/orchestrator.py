@@ -420,8 +420,16 @@ class HorizonOrchestrator:
         Returns:
             List[ContentItem]: All fetched items
         """
-        self.last_fetch_report = None
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        default_headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/122.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        }
+        async with httpx.AsyncClient(timeout=30.0, headers=default_headers) as client:
             tasks = []
 
             # GitHub sources
