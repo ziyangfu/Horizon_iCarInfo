@@ -250,9 +250,11 @@ class DailySummarizer:
                 title = _escape_markdown(view_item.title)
                 if language == "zh":
                     title = _pangu(title)
+                meta = view_item.item.metadata
+                oa_badge = " 🔓" if meta.get("is_oa") else ""
                 toc_entries.append(
                     f"{view_item.index}. [{title}](#{view_item.anchor_id}) "
-                    f"\u2b50\ufe0f {view_item.score}/10"
+                    f"\u2b50\ufe0f {view_item.score}/10{oa_badge}"
                 )
             toc_sections.append("\n".join(toc_entries))
             body_sections.append(f"## {profile_name}\n\n")
@@ -408,6 +410,16 @@ class DailySummarizer:
             else:
                 day = item.published_at.strftime("%d").lstrip("0")
                 source_parts.append(item.published_at.strftime(f"%b {day}, %H:%M"))
+        if meta.get("is_oa"):
+            pdf_url = _safe_url(meta.get("pdf_url"))
+            if pdf_url:
+                source_parts.append(
+                    f"[🔓 免费全文直达]({pdf_url})"
+                    if language == "zh"
+                    else f"[🔓 Free PDF]({pdf_url})"
+                )
+            else:
+                source_parts.append("🔓 Open Access")
         source_line = " \u00b7 ".join(source_parts)  # ·
 
         discussion_url = meta.get("discussion_url")
@@ -422,6 +434,14 @@ class DailySummarizer:
             f'<a id="{anchor_id or f"item-{index}"}"></a>',
             f"{'#' * heading_level} {title_link} \u2b50\ufe0f {score}/10",  # ⭐️
         ]
+        if meta.get("is_oa"):
+            pdf_url = _safe_url(meta.get("pdf_url"))
+            if language == "zh":
+                pdf_link = f" ｜ [📥 免费全文直达 (PDF)]({pdf_url})" if pdf_url else ""
+                lines.append(f"> 🔓 **Open Access (开放获取)**{pdf_link}")
+            else:
+                pdf_link = f" ｜ [📥 Free Full Text (PDF)]({pdf_url})" if pdf_url else ""
+                lines.append(f"> 🔓 **Open Access**{pdf_link}")
         if summary.strip():
             lines.extend(["", summary])
         if primary_content.strip():

@@ -203,8 +203,40 @@
         "enabled": true,
         "issn": "2624-8921",
         "journal_name": "MDPI Vehicles",
-        "max_results": 15,
+        "max_results": 10,
         "category": "mdpi-paper",
+        "profile": "icar-papers"
+      },
+      {
+        "enabled": true,
+        "issn": "2379-8858",
+        "journal_name": "IEEE Transactions on Intelligent Vehicles",
+        "max_results": 10,
+        "category": "academic-paper",
+        "profile": "icar-papers"
+      },
+      {
+        "enabled": true,
+        "issn": "0042-3114",
+        "journal_name": "Vehicle System Dynamics",
+        "max_results": 10,
+        "category": "academic-paper",
+        "profile": "icar-papers"
+      },
+      {
+        "enabled": true,
+        "issn": "0018-9545",
+        "journal_name": "IEEE Transactions on Vehicular Technology",
+        "max_results": 10,
+        "category": "academic-paper",
+        "profile": "icar-papers"
+      },
+      {
+        "enabled": true,
+        "issn": "2574-0741",
+        "journal_name": "SAE Int. J. of Connected and Automated Vehicles",
+        "max_results": 10,
+        "category": "academic-paper",
         "profile": "icar-papers"
       }
     ]
@@ -225,7 +257,8 @@
         "limit": 3,
         "categories": [
           "arxiv-paper",
-          "mdpi-paper"
+          "mdpi-paper",
+          "academic-paper"
         ]
       },
       "patents": {

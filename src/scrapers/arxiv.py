@@ -129,6 +129,8 @@ class ArXivScraper(BaseScraper):
                         "category": category_tag,
                         "authors": authors,
                         "summary": summary,
+                        "is_oa": True,
+                        "pdf_url": pdf_url,
                     },
                     profile=profile_route,
                 )

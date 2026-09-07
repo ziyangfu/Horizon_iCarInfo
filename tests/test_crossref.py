@@ -45,6 +45,7 @@ def _sample_crossref_item(
     abstract: str = "<jats:p>This study investigates <jats:bold>vehicle motion control</jats:bold> strategies.</jats:p>",
     authors: list[dict] | None = None,
     pub_date: list[int] | None = None,
+    link: list[dict] | None = None,
 ) -> dict:
     if authors is None:
         authors = [
@@ -54,6 +55,13 @@ def _sample_crossref_item(
     if pub_date is None:
         now = _now()
         pub_date = [now.year, now.month, now.day]
+    if link is None:
+        link = [
+            {
+                "URL": f"https://www.mdpi.com/2624-8921/8/9/210/pdf",
+                "content-type": "application/pdf",
+            }
+        ]
 
     return {
         "DOI": doi,
@@ -67,6 +75,7 @@ def _sample_crossref_item(
         "published-online": {
             "date-parts": [pub_date]
         },
+        "link": link,
     }
 
 
@@ -128,6 +137,8 @@ def test_crossref_scraper_fetch_valid() -> None:
     assert item.metadata["journal"] == "MDPI Vehicles"
     assert item.metadata["category"] == "mdpi-paper"
     assert item.metadata["summary"] == "Real-vehicle experiments on chassis control."
+    assert item.metadata["is_oa"] is True
+    assert item.metadata["pdf_url"] == "https://www.mdpi.com/2624-8921/8/9/210/pdf"
     assert item.profile == "icar-papers"
 
 
@@ -230,3 +241,41 @@ def test_papers_quota_limit_enforced_across_arxiv_and_mdpi() -> None:
 
     selected_categories = [item.metadata["category"] for item in result.items]
     assert selected_categories == ["arxiv-paper", "mdpi-paper", "arxiv-paper"]
+
+
+def test_summarizer_renders_open_access_badge() -> None:
+    from src.ai.summarizer import DailySummarizer
+
+    summarizer = DailySummarizer(profile_order=["icar-papers"])
+    item = ContentItem(
+        id="crossref:26248921:10_3390_vehicles8090210",
+        source_type=SourceType.CROSSREF,
+        title="[Paper] Trajectory Tracking Control",
+        url="https://doi.org/10.3390/vehicles8090210",
+        content="Paper content",
+        published_at=_now(),
+        metadata={
+            "doi": "10.3390/vehicles8090210",
+            "is_oa": True,
+            "pdf_url": "https://www.mdpi.com/2624-8921/8/9/210/pdf",
+            "category": "mdpi-paper",
+        },
+        profile="icar-papers",
+        processing=ProcessingResult(
+            classification=ClassificationResult(
+                profile="icar-papers",
+                method="source_override",
+            ),
+            analysis=ContentAnalysis(
+                score=8.5,
+                reason="test reason",
+                summary="test summary",
+            ),
+        ),
+    )
+    md = asyncio.run(summarizer.generate_summary([item], "2026-09-07", 1, language="zh"))
+    assert "🔓" in md
+    assert "Open Access" in md
+    assert "免费全文直达 (PDF)" in md
+    assert "https://www.mdpi.com/2624-8921/8/9/210/pdf" in md
+

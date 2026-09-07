@@ -122,6 +122,9 @@ class CrossrefScraper(BaseScraper):
             safe_doi = re.sub(r"[^a-zA-Z0-9_-]+", "_", doi).strip("_")
             item_id = self._generate_id("crossref", issn.replace("-", ""), safe_doi)
 
+            # 6. Check Open Access & PDF URL
+            is_oa, pdf_url = self._extract_oa_and_pdf(entry, doi, issn, journal_name)
+
             items.append(
                 ContentItem(
                     id=item_id,
@@ -138,6 +141,8 @@ class CrossrefScraper(BaseScraper):
                         "category": category_tag,
                         "authors": authors,
                         "summary": clean_abstract,
+                        "is_oa": is_oa,
+                        "pdf_url": pdf_url,
                     },
                     profile=profile_route,
                 )
@@ -185,3 +190,48 @@ class CrossrefScraper(BaseScraper):
                 pass
 
         return None
+
+    @staticmethod
+    def _extract_oa_and_pdf(
+        entry: dict,
+        doi: str,
+        issn: str,
+        journal_name: str,
+    ) -> tuple[bool, Optional[str]]:
+        """Determine if work is Open Access and extract direct PDF link."""
+        is_oa = False
+        pdf_url = None
+
+        # 1. MDPI is 100% Gold Open Access
+        if "mdpi" in journal_name.lower() or issn == "2624-8921":
+            is_oa = True
+
+        # 2. Check licenses for Creative Commons or Open Access
+        licenses = entry.get("license", [])
+        for lic in licenses:
+            u = lic.get("URL", "").lower()
+            if "creativecommons" in u or "open-access" in u:
+                is_oa = True
+                break
+
+        # 3. Check links for direct PDF
+        for link_item in entry.get("link", []):
+            url = link_item.get("URL", "")
+            content_type = link_item.get("content-type", "").lower()
+            if url.endswith(".pdf") or "pdf" in content_type:
+                pdf_url = url
+                is_oa = True
+                break
+
+        # 4. Fallback for MDPI standard PDF URL pattern if link was missing
+        if is_oa and not pdf_url and ("mdpi" in journal_name.lower() or issn == "2624-8921"):
+            # e.g. DOI 10.3390/vehicles8090210 -> https://www.mdpi.com/2624-8921/8/9/210/pdf
+            m = re.match(r"10\.3390/[a-zA-Z]+(\d+)(\d{2})(\d{4})", doi)
+            if m:
+                vol, issue, page = int(m.group(1)), int(m.group(2)), int(m.group(3))
+                pdf_url = f"https://www.mdpi.com/{issn}/{vol}/{issue}/{page}/pdf"
+            elif doi.startswith("10.3390/"):
+                suffix = doi.split("10.3390/")[-1]
+                pdf_url = f"https://www.mdpi.com/{issn}/{suffix}/pdf"
+
+        return is_oa, pdf_url
