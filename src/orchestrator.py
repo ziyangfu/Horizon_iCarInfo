@@ -27,6 +27,7 @@ from .scrapers.ossinsight import OSSInsightScraper
 from .scrapers.gdelt import GDELTScraper
 from .scrapers.google_news import GoogleNewsScraper
 from .scrapers.arxiv import ArXivScraper
+from .scrapers.google_patents import GooglePatentsScraper
 from .ai.client import create_ai_client
 from .ai.analyzer import ContentAnalyzer
 from .ai.summarizer import DailySummarizer
@@ -499,6 +500,14 @@ class HorizonOrchestrator:
                         name = f"ArXiv ({arxiv_cfg.category or idx+1})"
                         tasks.append(self._fetch_with_progress(name, arxiv_scraper, since))
 
+            # Patents
+            if self.config.sources.patents:
+                for idx, patent_cfg in enumerate(self.config.sources.patents):
+                    if patent_cfg.enabled:
+                        patent_scraper = GooglePatentsScraper(patent_cfg, client)
+                        name = f"Patents ({patent_cfg.category or idx+1})"
+                        tasks.append(self._fetch_with_progress(name, patent_scraper, since))
+
             # Fetch all concurrently
             outcomes = await asyncio.gather(*tasks)
             self.last_fetch_report = FetchReport(outcomes=list(outcomes))
@@ -573,6 +582,8 @@ class HorizonOrchestrator:
             return f"google_news:{meta['gn_query']}"
         if meta.get("arxiv_id"):
             return f"arxiv:{meta['arxiv_id']}"
+        if meta.get("patent_id"):
+            return f"patent:{meta['patent_id']}"
         if meta.get("domain"):
             return meta["domain"]
         return item.author or "unknown"

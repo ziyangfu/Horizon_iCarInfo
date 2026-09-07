@@ -21,6 +21,7 @@ class SourceType(str, Enum):
     GDELT = "gdelt"
     GOOGLE_NEWS = "google_news"
     ARXIV = "arxiv"
+    PATENTS = "patents"
 
 
 class SourceDefinition(NamedTuple):
@@ -43,6 +44,7 @@ SOURCE_REGISTRY = {
     SourceType.GDELT.value: SourceDefinition("gdelt"),
     SourceType.GOOGLE_NEWS.value: SourceDefinition("google_news"),
     SourceType.ARXIV.value: SourceDefinition("arxiv", config_is_list=True),
+    SourceType.PATENTS.value: SourceDefinition("patents", config_is_list=True),
 }
 
 ProfileRoute = Optional[Union[str, List[str]]]
@@ -451,6 +453,18 @@ class ArXivConfig(BaseModel):
     profile: ProfileRoute = None
 
 
+class PatentQueryConfig(BaseModel):
+    """Google Patents source query configuration."""
+
+    enabled: bool = True
+    keywords: List[str] = Field(default_factory=list)
+    assignees: List[str] = Field(default_factory=list)
+    countries: List[str] = Field(default_factory=list)
+    max_results: int = 20
+    category: Optional[str] = "chassis-patent"
+    profile: ProfileRoute = None
+
+
 class SourcesConfig(BaseModel):
     """All sources configuration."""
 
@@ -465,6 +479,7 @@ class SourcesConfig(BaseModel):
     gdelt: Optional[GDELTConfig] = None
     google_news: Optional[GoogleNewsConfig] = None
     arxiv: List[ArXivConfig] = Field(default_factory=list)
+    patents: List[PatentQueryConfig] = Field(default_factory=list)
 
 
 class WebhookConfig(BaseModel):

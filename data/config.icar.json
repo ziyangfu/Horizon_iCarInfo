@@ -51,6 +51,47 @@
         "profile": "icar-papers"
       }
     ],
+    "patents": [
+      {
+        "enabled": true,
+        "keywords": [
+          "线控转向",
+          "线控制动",
+          "电机械制动",
+          "电子机械制动",
+          "EMB",
+          "EHB",
+          "主动悬架",
+          "整车运动控制",
+          "底盘域控",
+          "转矩矢量",
+          "侧偏角估计",
+          "steer-by-wire",
+          "brake-by-wire",
+          "vehicle motion control"
+        ],
+        "assignees": [
+          "伯特利",
+          "同驭",
+          "拿森",
+          "博世",
+          "Bosch",
+          "采埃孚",
+          "ZF",
+          "大陆",
+          "Continental",
+          "耐世特",
+          "Nexteer",
+          "舍弗勒",
+          "Schaeffler",
+          "比亚迪",
+          "华为"
+        ],
+        "max_results": 20,
+        "category": "chassis-patent",
+        "profile": "icar-patents"
+      }
+    ],
     "github": [
       {
         "type": "repo_releases",
@@ -174,6 +215,13 @@
         "limit": 3,
         "categories": [
           "arxiv-paper"
+        ]
+      },
+      "patents": {
+        "name": "前瞻专利",
+        "limit": 3,
+        "categories": [
+          "chassis-patent"
         ]
       }
     },
