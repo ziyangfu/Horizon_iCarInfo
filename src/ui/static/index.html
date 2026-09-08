@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/dashboard.css?v=20260908_fix">
 </head>
 <body>
   <!-- Ambient background glow effects -->
@@ -39,8 +39,14 @@
           </div>
         </div>
 
+        <!-- Refresh Reports Button -->
+        <button id="btn-refresh-reports" class="btn btn-glass" title="刷新情报速递列表">
+          <span class="icon">🔄</span>
+          <span>刷新</span>
+        </button>
+
         <!-- Whitelist Drawer Trigger -->
-        <button id="btn-open-whitelist" class="btn btn-glass" title="查看领域白名单与知识库">
+        <button id="btn-open-whitelist" class="btn btn-glass" title="查看并配置领域白名单">
           <span class="icon">🧬</span>
           <span>底盘知识白名单</span>
         </button>
@@ -181,63 +187,112 @@
     </main>
 
     <!-- Slide-in Knowledge Base & Whitelist Drawer -->
+    <!-- Slide-in Knowledge Base & Whitelist Config Drawer -->
     <div id="whitelist-drawer" class="drawer-backdrop">
       <div class="drawer-panel glass-drawer">
         <div class="drawer-header">
           <div class="drawer-title-group">
-            <span class="drawer-badge">KNOWLEDGE BASE</span>
-            <h3>底盘 VMC 领域知识白名单与降噪规则</h3>
+            <span class="drawer-badge">KNOWLEDGE CONFIG</span>
+            <h3>底盘知识白名单与规则配置</h3>
           </div>
           <button id="btn-close-drawer" class="btn-close-drawer" title="关闭抽屉">✕</button>
         </div>
 
+        <!-- Editor Mode Switcher -->
+        <div class="drawer-tabs-bar">
+          <button class="drawer-tab-btn active" id="tab-mode-visual">🏷️ 可视化编辑</button>
+          <button class="drawer-tab-btn" id="tab-mode-json">⚡️ JSON 源码编辑</button>
+        </div>
+
         <div class="drawer-body">
-          <div class="drawer-section">
-            <h4>🎯 核心定位与评分守卫</h4>
-            <p class="drawer-desc">
-              系统针对 <strong>车辆运动控制 (VMC)</strong> 与 <strong>线控底盘全域协同 (CMC)</strong> 注入独家量化白名单，对满足准入规则的技术主题与 Tier-1/OEM 提供量化加权，并对营销、降价促销、非底盘娱乐等内容执行反向降噪惩罚。
-            </p>
+          <!-- 1. Visual Editor View -->
+          <div id="drawer-view-visual" class="editor-view-container">
+            <div class="drawer-stats-grid" id="whitelist-stats-container">
+              <div class="stat-box">
+                <span class="num" id="wl-p0-topics">--</span>
+                <span class="lbl">P0 核心主题</span>
+              </div>
+              <div class="stat-box">
+                <span class="num" id="wl-p1-topics">--</span>
+                <span class="lbl">P1 强相关主题</span>
+              </div>
+              <div class="stat-box">
+                <span class="num" id="wl-p0-suppliers">--</span>
+                <span class="lbl">P0 核心 Tier-1</span>
+              </div>
+              <div class="stat-box">
+                <span class="num" id="wl-p1-suppliers">--</span>
+                <span class="lbl">P1 核心厂商</span>
+              </div>
+            </div>
+
+            <!-- Group Selector -->
+            <div class="edit-group-selector">
+              <label for="select-whitelist-group" class="field-label">当前编辑维度：</label>
+              <select id="select-whitelist-group" class="glass-select full-width">
+                <optgroup label="技术控制主题 (Topics)">
+                  <option value="topics.p0_core" selected>🎯 P0 核心底盘运动控制主题</option>
+                  <option value="topics.p1_strongly_related">📌 P1 强相关底盘技术主题</option>
+                  <option value="topics.p2_methods_tools">🛠️ P2 动力学方法与工具库</option>
+                  <option value="topics.p3_general_control">📐 P3 泛控制与辅助主题</option>
+                </optgroup>
+                <optgroup label="供应链与厂商 (Suppliers)">
+                  <option value="suppliers.p0_tier1_core">🏆 P0 核心 Tier-1 供应商 (博世/采埃孚/同驭/伯特利等)</option>
+                  <option value="suppliers.p1_tier1_oem_advanced">🚗 P1 先进车企与新锐线控供应商</option>
+                  <option value="suppliers.p2_tier2_specialized">⚙️ P2 专业底盘 Tier-2 与核心零部件厂</option>
+                  <option value="suppliers.p3_oem_brands">🏷️ P3 主流乘用车 OEM 品牌</option>
+                </optgroup>
+                <optgroup label="反向降噪与过滤 (Noise Reduction)">
+                  <option value="noise_reduction.negative_keywords">🚫 反向强降噪扣分关键词 (促销/销量/娱乐等)</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <!-- Quick Add Input -->
+            <div class="add-chip-bar">
+              <input type="text" id="input-new-chip" placeholder="输入词条后按回车，或点击右侧添加..." autocomplete="off">
+              <button id="btn-add-chip" class="btn btn-add">+ 添加词条</button>
+            </div>
+
+            <!-- Editable Chips Area -->
+            <div class="chips-editor-area">
+              <div class="chips-header">
+                <span class="chips-count-label" id="current-group-count">当前共 0 个词条</span>
+                <span class="chips-tip">💡 点击词条右侧的 ✕ 即可删除</span>
+              </div>
+              <div class="chip-container editable" id="editable-chips-box">
+                <!-- Chips dynamically rendered here -->
+              </div>
+            </div>
           </div>
 
-          <div class="drawer-stats-grid" id="whitelist-stats-container">
-            <div class="stat-box">
-              <span class="num" id="wl-p0-topics">--</span>
-              <span class="lbl">P0 核心控制主题</span>
+          <!-- 2. Raw JSON Editor View -->
+          <div id="drawer-view-json" class="editor-view-container" style="display:none;">
+            <div class="json-editor-toolbar">
+              <span class="json-tip">支持直接编辑 JSON 规则配置，修改后点击底部保存：</span>
+              <button id="btn-format-json" class="btn btn-sm">✨ 格式化 JSON</button>
             </div>
-            <div class="stat-box">
-              <span class="num" id="wl-p1-topics">--</span>
-              <span class="lbl">P1 强相关主题</span>
-            </div>
-            <div class="stat-box">
-              <span class="num" id="wl-p0-suppliers">--</span>
-              <span class="lbl">P0 核心 Tier-1 厂商</span>
-            </div>
-            <div class="stat-box">
-              <span class="num" id="wl-p1-suppliers">--</span>
-              <span class="lbl">P1 先进车企与新锐</span>
-            </div>
-          </div>
-
-          <div class="drawer-section">
-            <h4>🏆 P0 核心底盘控制主题（摘录）</h4>
-            <div class="chip-container" id="p0-topics-chips"></div>
-          </div>
-
-          <div class="drawer-section">
-            <h4>🏢 P0~P1 核心底盘供应链与厂商雷达（摘录）</h4>
-            <div class="chip-container" id="suppliers-chips"></div>
-          </div>
-
-          <div class="drawer-section">
-            <h4>🚫 反向强降噪剔除词汇库</h4>
-            <div class="chip-container negative" id="negative-chips"></div>
+            <textarea id="whitelist-json-textarea" spellcheck="false" placeholder="正在加载 JSON 源码..."></textarea>
+            <div id="json-syntax-error" class="json-error-msg" style="display:none;"></div>
           </div>
         </div>
 
-        <div class="drawer-footer">
-          <span>文件路径: <code>data/vmc_whitelist.json</code> (支持热更新)</span>
+        <div class="drawer-footer-actions">
+          <div class="footer-hint">
+            <span>文件: <code>data/vmc_whitelist.json</code></span>
+          </div>
+          <div class="footer-btns">
+            <button id="btn-reset-whitelist" class="btn btn-secondary">🔄 重置更改</button>
+            <button id="btn-save-whitelist" class="btn btn-primary">💾 保存并生效</button>
+          </div>
         </div>
       </div>
+    </div>
+
+    <!-- Global Floating Toast Notification -->
+    <div id="app-toast" class="toast-notification">
+      <span class="toast-icon" id="toast-icon">✅</span>
+      <span class="toast-message" id="toast-msg">操作成功</span>
     </div>
 
     <!-- Footer -->
@@ -253,6 +308,6 @@
     </footer>
   </div>
 
-  <script src="js/dashboard.js"></script>
+  <script src="js/dashboard.js?v=20260908_fix"></script>
 </body>
 </html>

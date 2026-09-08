@@ -98,14 +98,38 @@ def test_ui_http_server_endpoints():
         assert "metrics" in detail
         assert "items" in detail
 
-        # 4. Whitelist endpoint
+        # 4. Whitelist GET endpoint
         res = httpx.get(f"{base_url}/api/whitelist", timeout=5.0)
         assert res.status_code == 200
         wl_data = res.json()["data"]
         assert "stats" in wl_data
+        assert "raw_config" in wl_data
         assert wl_data["stats"]["p0_topics_count"] > 0
 
-        # 5. HTML Index
+        # 5. Whitelist POST endpoint
+        raw_config = wl_data["raw_config"]
+        # Backup original list
+        orig_p0 = list(raw_config.get("topics", {}).get("p0_core", []))
+        test_keyword = "__test_vmc_auto_tuning_term__"
+        raw_config["topics"]["p0_core"].insert(0, test_keyword)
+
+        post_res = httpx.post(f"{base_url}/api/whitelist", json=raw_config, timeout=5.0)
+        assert post_res.status_code == 200
+        post_json = post_res.json()
+        assert post_json["code"] == 0
+
+        # Verify through subsequent GET
+        verify_res = httpx.get(f"{base_url}/api/whitelist", timeout=5.0)
+        assert verify_res.status_code == 200
+        verify_data = verify_res.json()["data"]
+        assert verify_data["raw_config"]["topics"]["p0_core"][0] == test_keyword
+
+        # Clean up: restore original configuration
+        raw_config["topics"]["p0_core"] = orig_p0
+        restore_res = httpx.post(f"{base_url}/api/whitelist", json=raw_config, timeout=5.0)
+        assert restore_res.status_code == 200
+
+        # 6. HTML Index
         res = httpx.get(f"{base_url}/", timeout=5.0)
         assert res.status_code == 200
         assert "Horizon_iCarInfo" in res.text
@@ -114,3 +138,4 @@ def test_ui_http_server_endpoints():
     finally:
         httpd.shutdown()
         httpd.server_close()
+

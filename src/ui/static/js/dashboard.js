@@ -11,10 +11,13 @@ document.addEventListener('DOMContentLoaded', () => {
     activeTag: null,
     searchQuery: '',
     whitelistData: null,
+    whitelistConfig: null,
+    currentEditorMode: 'visual', // 'visual' | 'json'
   };
 
-  // DOM Elements
+  // Top nav & Report controls
   const reportSelect = document.getElementById('report-select');
+  const btnRefreshReports = document.getElementById('btn-refresh-reports');
   const itemsContainer = document.getElementById('items-container');
   const searchInput = document.getElementById('search-input');
   const searchClear = document.getElementById('search-clear');
@@ -42,27 +45,70 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCloseDrawer = document.getElementById('btn-close-drawer');
   const whitelistDrawer = document.getElementById('whitelist-drawer');
 
+  const tabModeVisual = document.getElementById('tab-mode-visual');
+  const tabModeJson = document.getElementById('tab-mode-json');
+  const drawerViewVisual = document.getElementById('drawer-view-visual');
+  const drawerViewJson = document.getElementById('drawer-view-json');
+
+  const selectWhitelistGroup = document.getElementById('select-whitelist-group');
+  const inputNewChip = document.getElementById('input-new-chip');
+  const btnAddChip = document.getElementById('btn-add-chip');
+  const editableChipsBox = document.getElementById('editable-chips-box');
+  const currentGroupCount = document.getElementById('current-group-count');
+
+  const whitelistJsonTextarea = document.getElementById('whitelist-json-textarea');
+  const btnFormatJson = document.getElementById('btn-format-json');
+  const jsonSyntaxError = document.getElementById('json-syntax-error');
+
+  const btnSaveWhitelist = document.getElementById('btn-save-whitelist');
+  const btnResetWhitelist = document.getElementById('btn-reset-whitelist');
+
+  // Global Toast
+  const appToast = document.getElementById('app-toast');
+  const toastMsg = document.getElementById('toast-msg');
+  const toastIcon = document.getElementById('toast-icon');
+  let toastTimer = null;
+
+  function showToast(message, isError = false) {
+    if (!appToast || !toastMsg || !toastIcon) return;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastMsg.textContent = message;
+    toastIcon.textContent = isError ? '❌' : '✅';
+    appToast.classList.toggle('error', isError);
+    appToast.classList.add('show');
+    toastTimer = setTimeout(() => {
+      appToast.classList.remove('show');
+    }, 3500);
+  }
+
   // 1. Initial Load: fetch report list
-  async function init() {
+  async function init(isManualRefresh = false) {
     try {
-      const res = await fetch('/api/reports');
+      const res = await fetch('/api/reports?t=' + Date.now());
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
       const data = await res.json();
       if (data.code === 0 && data.data && data.data.length > 0) {
         state.reports = data.data;
         populateReportSelect(state.reports);
         // Load the first (latest) report
         loadReport(state.reports[0].filename);
+        if (isManualRefresh) {
+          showToast(`已刷新情报库，当前最新: ${state.reports[0].date || state.reports[0].filename}`);
+        }
       } else {
         showEmpty('暂未发现生成的速递日报，请先在终端运行抓取或检查 data/summaries 目录');
       }
     } catch (err) {
       console.error('Failed to load reports:', err);
-      showEmpty('无法连接到看板后端 API 服务');
+      showEmpty('无法连接到看板后端 API 服务: ' + err.message);
     }
   }
 
   // Populate Select options
   function populateReportSelect(reports) {
+    if (!reportSelect) return;
     reportSelect.innerHTML = '';
     reports.forEach((rep, idx) => {
       const opt = document.createElement('option');
@@ -73,30 +119,34 @@ document.addEventListener('DOMContentLoaded', () => {
       reportSelect.appendChild(opt);
     });
 
-    reportSelect.addEventListener('change', (e) => {
+    reportSelect.onchange = (e) => {
       loadReport(e.target.value);
-    });
+    };
   }
 
   // Fetch and display a specific report
   async function loadReport(filename) {
+    if (!itemsContainer) return;
     itemsContainer.innerHTML = `
       <div class="loading-state">
         <div class="spinner"></div>
-        <p>正在装载并结构化解析「${filename}」情报数据...</p>
+        <p>正在装载并结构化解析「${escapeHtml(filename)}」情报数据...</p>
       </div>
     `;
 
     try {
-      const res = await fetch(`/api/reports/${encodeURIComponent(filename)}`);
+      const res = await fetch(`/api/reports/${encodeURIComponent(filename)}?t=` + Date.now());
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
       const json = await res.json();
       if (json.code === 0 && json.data) {
         state.currentReport = json.data;
         state.activeCategory = 'all';
         state.activeTag = null;
         state.searchQuery = '';
-        searchInput.value = '';
-        searchClear.style.display = 'none';
+        if (searchInput) searchInput.value = '';
+        if (searchClear) searchClear.style.display = 'none';
 
         updateUI();
       } else {
@@ -104,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (err) {
       console.error('Failed to fetch report detail:', err);
-      showEmpty('网络通信失败，未能加载报告内容');
+      showEmpty('网络通信失败，未能加载报告内容: ' + err.message);
     }
   }
 
@@ -116,22 +166,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const metrics = r.metrics || {};
 
     // Header info
-    reportTitle.textContent = r.title || '智能汽车底盘前瞻资讯速递';
-    reportSubtitle.textContent = r.subtitle || `日期: ${r.date} | 共收录 ${items.length} 条高价值情报`;
+    if (reportTitle) reportTitle.textContent = r.title || '智能汽车底盘前瞻资讯速递';
+    if (reportSubtitle) reportSubtitle.textContent = r.subtitle || `日期: ${r.date} | 共收录 ${items.length} 条高价值情报`;
 
     // Metrics
-    valSelectedCount.textContent = metrics.selected_total || items.length;
-    valRawCount.textContent = metrics.total_raw || (items.length * 9);
-    valFilterRate.textContent = `降噪率 ${metrics.noise_filter_rate || '88.5%'}`;
-    valPapersCount.textContent = metrics.papers_count || 0;
-    valPatentsCount.textContent = metrics.patents_count || 0;
-    valAvgScore.textContent = `${metrics.avg_score || '4.5'}/10`;
+    if (valSelectedCount) valSelectedCount.textContent = metrics.selected_total || items.length;
+    if (valRawCount) valRawCount.textContent = metrics.total_raw || (items.length * 9);
+    if (valFilterRate) valFilterRate.textContent = `降噪率 ${metrics.noise_filter_rate || '88.5%'}`;
+    if (valPapersCount) valPapersCount.textContent = metrics.papers_count || 0;
+    if (valPatentsCount) valPatentsCount.textContent = metrics.patents_count || 0;
+    if (valAvgScore) valAvgScore.textContent = `${metrics.avg_score || '4.5'}/10`;
 
     // Tab counts
-    cntAll.textContent = items.length;
-    cntInfo.textContent = items.filter(i => i.category === 'icar-info').length;
-    cntPapers.textContent = items.filter(i => i.category === 'icar-papers').length;
-    cntPatents.textContent = items.filter(i => i.category === 'icar-patents').length;
+    if (cntAll) cntAll.textContent = items.length;
+    if (cntInfo) cntInfo.textContent = items.filter(i => i.category === 'icar-info').length;
+    if (cntPapers) cntPapers.textContent = items.filter(i => i.category === 'icar-papers').length;
+    if (cntPatents) cntPatents.textContent = items.filter(i => i.category === 'icar-patents').length;
 
     // Reset tab active state
     tabBtns.forEach(btn => {
@@ -147,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Populate dynamic tags
   function populateTags(items) {
+    if (!tagsList) return;
     const tagCount = {};
     items.forEach(item => {
       (item.tags || []).forEach(tag => {
@@ -176,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Filter and render items
   function renderItems() {
-    if (!state.currentReport) return;
+    if (!state.currentReport || !itemsContainer) return;
 
     let items = state.currentReport.items || [];
 
@@ -371,10 +422,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showEmpty(msg) {
-    itemsContainer.innerHTML = `<div class="empty-state"><p>${escapeHtml(msg)}</p></div>`;
+    if (itemsContainer) {
+      itemsContainer.innerHTML = `<div class="empty-state"><p>${escapeHtml(msg)}</p></div>`;
+    }
   }
 
-  // Event Listeners: Category Tabs
+  // Category Tabs
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       tabBtns.forEach(b => b.classList.remove('active'));
@@ -384,86 +437,330 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Event Listeners: Search input
-  searchInput.addEventListener('input', (e) => {
-    state.searchQuery = e.target.value;
-    searchClear.style.display = state.searchQuery ? 'inline' : 'none';
-    renderItems();
-  });
-
-  searchClear.addEventListener('click', () => {
-    searchInput.value = '';
-    state.searchQuery = '';
-    searchClear.style.display = 'none';
-    renderItems();
-  });
-
-  // Event Listeners: Whitelist Drawer
-  btnOpenWhitelist.addEventListener('click', async () => {
-    whitelistDrawer.classList.add('open');
-    if (!state.whitelistData) {
-      try {
-        const res = await fetch('/api/whitelist');
-        const json = await res.json();
-        if (json.code === 0) {
-          state.whitelistData = json.data;
-          renderWhitelistDrawer(json.data);
-        }
-      } catch (err) {
-        console.error('Failed to load whitelist:', err);
-      }
-    }
-  });
-
-  btnCloseDrawer.addEventListener('click', () => {
-    whitelistDrawer.classList.remove('open');
-  });
-
-  whitelistDrawer.addEventListener('click', (e) => {
-    if (e.target === whitelistDrawer) {
-      whitelistDrawer.classList.remove('open');
-    }
-  });
-
-  function renderWhitelistDrawer(data) {
-    const stats = data.stats || {};
-    document.getElementById('wl-p0-topics').textContent = stats.p0_topics_count || '--';
-    document.getElementById('wl-p1-topics').textContent = stats.p1_topics_count || '--';
-    document.getElementById('wl-p0-suppliers').textContent = stats.p0_suppliers_count || '--';
-    document.getElementById('wl-p1-suppliers').textContent = stats.p1_suppliers_count || '--';
-
-    // P0 Topics chips
-    const p0TopicsContainer = document.getElementById('p0-topics-chips');
-    p0TopicsContainer.innerHTML = '';
-    (data.topics?.p0_core || []).slice(0, 18).forEach(topic => {
-      const chip = document.createElement('span');
-      chip.className = 'chip';
-      chip.textContent = topic;
-      p0TopicsContainer.appendChild(chip);
-    });
-
-    // Suppliers chips
-    const suppliersContainer = document.getElementById('suppliers-chips');
-    suppliersContainer.innerHTML = '';
-    const coreSuppliers = (data.suppliers?.p0_tier1_core || []).concat(data.suppliers?.p1_tier1_oem_advanced || []).slice(0, 18);
-    coreSuppliers.forEach(sup => {
-      const chip = document.createElement('span');
-      chip.className = 'chip';
-      chip.textContent = sup;
-      suppliersContainer.appendChild(chip);
-    });
-
-    // Negative keywords chips
-    const negativeContainer = document.getElementById('negative-chips');
-    negativeContainer.innerHTML = '';
-    (data.noise_words || []).forEach(word => {
-      const chip = document.createElement('span');
-      chip.className = 'chip';
-      chip.textContent = `-${word}`;
-      negativeContainer.appendChild(chip);
+  // Search input
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      state.searchQuery = e.target.value;
+      if (searchClear) searchClear.style.display = state.searchQuery ? 'inline' : 'none';
+      renderItems();
     });
   }
 
-  // Run init
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      state.searchQuery = '';
+      searchClear.style.display = 'none';
+      renderItems();
+    });
+  }
+
+  // Refresh Button
+  if (btnRefreshReports) {
+    btnRefreshReports.addEventListener('click', async () => {
+      btnRefreshReports.classList.add('rotating');
+      showToast('正在重新扫描最新情报速递...');
+      await init(true);
+      setTimeout(() => btnRefreshReports.classList.remove('rotating'), 600);
+    });
+  }
+
+  // --- Whitelist Management Logic ---
+
+  // Fetch full whitelist from server
+  async function fetchWhitelistData() {
+    try {
+      const res = await fetch('/api/whitelist?t=' + Date.now());
+      const json = await res.json();
+      if (json.code === 0 && json.data) {
+        state.whitelistData = json.data;
+        state.whitelistConfig = JSON.parse(JSON.stringify(json.data.raw_config || {}));
+        updateDrawerUI();
+      } else {
+        showToast('加载白名单数据失败', true);
+      }
+    } catch (err) {
+      console.error('Failed to load whitelist:', err);
+      showToast('网络通信异常，无法获取白名单', true);
+    }
+  }
+
+  // Update Drawer UI
+  function updateDrawerUI() {
+    if (!state.whitelistConfig) return;
+
+    // Update Top 4 Metric Boxes
+    const topics = state.whitelistConfig.topics || {};
+    const suppliers = state.whitelistConfig.suppliers || {};
+    const wlP0T = document.getElementById('wl-p0-topics');
+    const wlP1T = document.getElementById('wl-p1-topics');
+    const wlP0S = document.getElementById('wl-p0-suppliers');
+    const wlP1S = document.getElementById('wl-p1-suppliers');
+
+    if (wlP0T) wlP0T.textContent = (topics.p0_core || []).length;
+    if (wlP1T) wlP1T.textContent = (topics.p1_strongly_related || []).length;
+    if (wlP0S) wlP0S.textContent = (suppliers.p0_tier1_core || []).length;
+    if (wlP1S) wlP1S.textContent = (suppliers.p1_tier1_oem_advanced || []).length;
+
+    // Render current active group chips
+    renderCurrentGroupChips();
+
+    // Sync JSON textarea
+    if (whitelistJsonTextarea) {
+      whitelistJsonTextarea.value = JSON.stringify(state.whitelistConfig, null, 2);
+    }
+    if (jsonSyntaxError) {
+      jsonSyntaxError.style.display = 'none';
+    }
+  }
+
+  // Resolve array from nested key path (e.g. 'topics.p0_core')
+  function getGroupArray(path) {
+    if (!state.whitelistConfig) return null;
+    const parts = path.split('.');
+    let cur = state.whitelistConfig;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!cur[parts[i]]) cur[parts[i]] = {};
+      cur = cur[parts[i]];
+    }
+    const lastKey = parts[parts.length - 1];
+    if (!Array.isArray(cur[lastKey])) {
+      cur[lastKey] = [];
+    }
+    return cur[lastKey];
+  }
+
+  // Render chips for currently selected category
+  function renderCurrentGroupChips() {
+    if (!selectWhitelistGroup || !editableChipsBox) return;
+    const groupPath = selectWhitelistGroup.value;
+    const arr = getGroupArray(groupPath) || [];
+
+    if (currentGroupCount) {
+      currentGroupCount.textContent = `当前分类收录 ${arr.length} 个词条`;
+    }
+    editableChipsBox.innerHTML = '';
+
+    if (arr.length === 0) {
+      editableChipsBox.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">暂无词条，可在上方输入并点击添加</span>';
+      return;
+    }
+
+    arr.forEach((itemText, idx) => {
+      const chip = document.createElement('span');
+      chip.className = 'chip chip-removable';
+      chip.innerHTML = `
+        <span class="chip-text">${escapeHtml(itemText)}</span>
+        <button class="btn-del-chip" title="删除「${escapeHtml(itemText)}」">✕</button>
+      `;
+
+      chip.querySelector('.btn-del-chip').addEventListener('click', () => {
+        arr.splice(idx, 1);
+        renderCurrentGroupChips();
+        updateDrawerStatsOnly();
+      });
+
+      editableChipsBox.appendChild(chip);
+    });
+  }
+
+  // Fast update for stats numbers
+  function updateDrawerStatsOnly() {
+    if (!state.whitelistConfig) return;
+    const topics = state.whitelistConfig.topics || {};
+    const suppliers = state.whitelistConfig.suppliers || {};
+    const wlP0T = document.getElementById('wl-p0-topics');
+    const wlP1T = document.getElementById('wl-p1-topics');
+    const wlP0S = document.getElementById('wl-p0-suppliers');
+    const wlP1S = document.getElementById('wl-p1-suppliers');
+
+    if (wlP0T) wlP0T.textContent = (topics.p0_core || []).length;
+    if (wlP1T) wlP1T.textContent = (topics.p1_strongly_related || []).length;
+    if (wlP0S) wlP0S.textContent = (suppliers.p0_tier1_core || []).length;
+    if (wlP1S) wlP1S.textContent = (suppliers.p1_tier1_oem_advanced || []).length;
+  }
+
+  // Add chip action
+  function addChipFromInput() {
+    if (!inputNewChip || !selectWhitelistGroup) return;
+    const text = inputNewChip.value.trim();
+    if (!text) return;
+
+    const groupPath = selectWhitelistGroup.value;
+    const arr = getGroupArray(groupPath);
+    if (!arr) return;
+
+    // Duplicate check
+    if (arr.includes(text)) {
+      showToast(`词条「${text}」已存在`, true);
+      return;
+    }
+
+    arr.unshift(text); // Add to front
+    inputNewChip.value = '';
+    renderCurrentGroupChips();
+    updateDrawerStatsOnly();
+    showToast(`已添加「${text}」`);
+  }
+
+  // Drawer Tabs Switcher
+  if (tabModeVisual && tabModeJson) {
+    tabModeVisual.addEventListener('click', () => {
+      if (state.currentEditorMode === 'json' && whitelistJsonTextarea) {
+        try {
+          const parsed = JSON.parse(whitelistJsonTextarea.value);
+          state.whitelistConfig = parsed;
+          if (jsonSyntaxError) jsonSyntaxError.style.display = 'none';
+        } catch (err) {
+          if (jsonSyntaxError) {
+            jsonSyntaxError.textContent = `JSON 语法错误，无法切换: ${err.message}`;
+            jsonSyntaxError.style.display = 'block';
+          }
+          return;
+        }
+      }
+      state.currentEditorMode = 'visual';
+      tabModeVisual.classList.add('active');
+      tabModeJson.classList.remove('active');
+      if (drawerViewVisual) drawerViewVisual.style.display = 'block';
+      if (drawerViewJson) drawerViewJson.style.display = 'none';
+      updateDrawerUI();
+    });
+
+    tabModeJson.addEventListener('click', () => {
+      state.currentEditorMode = 'json';
+      tabModeJson.classList.add('active');
+      tabModeVisual.classList.remove('active');
+      if (drawerViewJson) drawerViewJson.style.display = 'block';
+      if (drawerViewVisual) drawerViewVisual.style.display = 'none';
+      if (whitelistJsonTextarea) {
+        whitelistJsonTextarea.value = JSON.stringify(state.whitelistConfig, null, 2);
+      }
+      if (jsonSyntaxError) jsonSyntaxError.style.display = 'none';
+    });
+  }
+
+  // Select Group change
+  if (selectWhitelistGroup) {
+    selectWhitelistGroup.addEventListener('change', () => {
+      renderCurrentGroupChips();
+    });
+  }
+
+  // Add chip events
+  if (btnAddChip) {
+    btnAddChip.addEventListener('click', addChipFromInput);
+  }
+  if (inputNewChip) {
+    inputNewChip.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addChipFromInput();
+      }
+    });
+  }
+
+  // JSON Prettify
+  if (btnFormatJson && whitelistJsonTextarea) {
+    btnFormatJson.addEventListener('click', () => {
+      try {
+        const parsed = JSON.parse(whitelistJsonTextarea.value);
+        whitelistJsonTextarea.value = JSON.stringify(parsed, null, 2);
+        state.whitelistConfig = parsed;
+        if (jsonSyntaxError) jsonSyntaxError.style.display = 'none';
+        showToast('JSON 已格式化排版');
+      } catch (err) {
+        if (jsonSyntaxError) {
+          jsonSyntaxError.textContent = `格式化失败: ${err.message}`;
+          jsonSyntaxError.style.display = 'block';
+        }
+      }
+    });
+  }
+
+  // Save Whitelist
+  if (btnSaveWhitelist) {
+    btnSaveWhitelist.addEventListener('click', async () => {
+      let payload = state.whitelistConfig;
+
+      if (state.currentEditorMode === 'json' && whitelistJsonTextarea) {
+        try {
+          payload = JSON.parse(whitelistJsonTextarea.value);
+          state.whitelistConfig = payload;
+          if (jsonSyntaxError) jsonSyntaxError.style.display = 'none';
+        } catch (err) {
+          if (jsonSyntaxError) {
+            jsonSyntaxError.textContent = `JSON 语法错误: ${err.message}`;
+            jsonSyntaxError.style.display = 'block';
+          }
+          showToast('JSON 格式有误，请修正后重试', true);
+          return;
+        }
+      }
+
+      btnSaveWhitelist.disabled = true;
+      btnSaveWhitelist.textContent = '💾 正在保存...';
+
+      try {
+        const res = await fetch('/api/whitelist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (json.code === 0) {
+          showToast(json.message || '白名单已保存并热重载生效！');
+          state.whitelistConfig = payload;
+          updateDrawerUI();
+        } else {
+          showToast(json.message || '保存失败', true);
+        }
+      } catch (err) {
+        console.error('Failed to save whitelist:', err);
+        showToast('网络请求失败，未能保存白名单', true);
+      } finally {
+        btnSaveWhitelist.disabled = false;
+        btnSaveWhitelist.textContent = '💾 保存并生效';
+      }
+    });
+  }
+
+  // Reset Whitelist
+  if (btnResetWhitelist) {
+    btnResetWhitelist.addEventListener('click', () => {
+      if (confirm('确定要放弃当前未保存的修改，重新载入白名单文件吗？')) {
+        fetchWhitelistData();
+        showToast('已重置回文件原始状态');
+      }
+    });
+  }
+
+  // Whitelist Drawer Open/Close
+  if (btnOpenWhitelist && whitelistDrawer) {
+    btnOpenWhitelist.addEventListener('click', () => {
+      whitelistDrawer.classList.add('open');
+      if (!state.whitelistConfig) {
+        fetchWhitelistData();
+      } else {
+        updateDrawerUI();
+      }
+    });
+  }
+
+  if (btnCloseDrawer && whitelistDrawer) {
+    btnCloseDrawer.addEventListener('click', () => {
+      whitelistDrawer.classList.remove('open');
+    });
+  }
+
+  if (whitelistDrawer) {
+    whitelistDrawer.addEventListener('click', (e) => {
+      if (e.target === whitelistDrawer) {
+        whitelistDrawer.classList.remove('open');
+      }
+    });
+  }
+
+  // Launch initial report load
   init();
 });
