@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Top badges
     let badgesHtml = '';
     if (item.category === 'icar-patents') {
-      badgesHtml += `<span class="cat-pill patents">⚖️ 权威发明专利</span>`;
+      badgesHtml += `<span class="cat-pill patents">⚖️ 发明专利</span>`;
       if (item.patent_number) {
         badgesHtml += `<span class="badge-patent-num">公开号: ${escapeHtml(item.patent_number)}</span>`;
       }
@@ -293,12 +293,12 @@ document.addEventListener('DOMContentLoaded', () => {
         badgesHtml += `<span class="badge-patent-num">申请人: ${escapeHtml(item.patent_applicant)}</span>`;
       }
     } else if (item.category === 'icar-papers') {
-      badgesHtml += `<span class="cat-pill papers">🎓 顶级前沿论文</span>`;
+      badgesHtml += `<span class="cat-pill papers">🎓 前沿论文</span>`;
       if (item.is_open_access) {
         badgesHtml += `<span class="badge-oa">🔓 Open Access 全文开放</span>`;
       }
     } else {
-      badgesHtml += `<span class="cat-pill info">⚡️ 行业前瞻突破</span>`;
+      badgesHtml += `<span class="cat-pill info">⚡️ 最新资讯</span>`;
     }
 
     const scoreHtml = item.score ? `<div class="score-badge">⭐️ ${item.score.toFixed(1)}/10</div>` : '';
