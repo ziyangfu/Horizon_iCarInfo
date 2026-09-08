@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon_iCarInfo · 智能汽车底盘前瞻情报指挥舱</title>
+  <meta name="description" content="AI驱动的智能汽车与整车运动控制(VMC)前瞻资讯、顶级学术期刊与核心专利情报雷达">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+  <!-- Ambient background glow effects -->
+  <div class="bg-glow-orb orb-1"></div>
+  <div class="bg-glow-orb orb-2"></div>
+  <div class="bg-glow-orb orb-3"></div>
+
+  <div class="app-layout">
+    <!-- Top Navigation Header -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <div class="brand-badge">🌅 HORIZON</div>
+        <div class="brand-title-group">
+          <h1 class="brand-title">iCarInfo <span class="badge-tag">CHASSIS RADAR</span></h1>
+          <span class="brand-sub">智能汽车底盘前瞻情报指挥舱 · VMC/CMC 前瞻雷达</span>
+        </div>
+      </div>
+
+      <div class="nav-controls">
+        <!-- Report Date Switcher -->
+        <div class="control-group">
+          <label for="report-select" class="control-label">速递期数</label>
+          <div class="select-wrapper">
+            <select id="report-select" class="glass-select" aria-label="选择历史速递期数">
+              <option value="" disabled selected>正在扫描历史速递...</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Whitelist Drawer Trigger -->
+        <button id="btn-open-whitelist" class="btn btn-glass" title="查看领域白名单与知识库">
+          <span class="icon">🧬</span>
+          <span>底盘知识白名单</span>
+        </button>
+
+        <!-- Live Status Pill -->
+        <div class="status-pill">
+          <span class="pulse-dot"></span>
+          <span class="status-text" id="system-status">雷达在线</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+      <!-- Cockpit KPI Metric Cards -->
+      <section class="kpi-grid">
+        <div class="kpi-card glass-panel" id="card-metric-total">
+          <div class="kpi-header">
+            <span class="kpi-label">高精情报提纯</span>
+            <span class="kpi-icon">⚡️</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value" id="val-selected-count">--</div>
+            <div class="kpi-trend positive">
+              <span class="trend-icon">🛡️</span>
+              <span id="val-filter-rate">降噪率 88.5%</span>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <span>原始采集池: <strong id="val-raw-count">--</strong> 条</span>
+          </div>
+        </div>
+
+        <div class="kpi-card glass-panel" id="card-metric-papers">
+          <div class="kpi-header">
+            <span class="kpi-label">顶刊前沿论文</span>
+            <span class="kpi-icon">🎓</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value" id="val-papers-count">--</div>
+            <div class="kpi-trend oa-highlight">
+              <span class="trend-icon">🔓</span>
+              <span>Open Access 直达</span>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <span>Crossref 顶刊 5 大核心源</span>
+          </div>
+        </div>
+
+        <div class="kpi-card glass-panel" id="card-metric-patents">
+          <div class="kpi-header">
+            <span class="kpi-label">权威发明专利</span>
+            <span class="kpi-icon">⚖️</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value" id="val-patents-count">--</div>
+            <div class="kpi-trend patent-badge">
+              <span class="trend-icon">🏛️</span>
+              <span>法律级专利硬隔离</span>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <span>Google Patents 真实公开号</span>
+          </div>
+        </div>
+
+        <div class="kpi-card glass-panel" id="card-metric-score">
+          <div class="kpi-header">
+            <span class="kpi-label">VMC 核心契合度</span>
+            <span class="kpi-icon">🎯</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value highlight-gold" id="val-avg-score">--</div>
+            <div class="kpi-trend gold-badge">
+              <span class="trend-icon">⭐️</span>
+              <span>量化白名单加权</span>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <span>底盘运动控制专家模型判定</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Search and Filter Bar -->
+      <section class="filter-section glass-panel">
+        <div class="filter-primary-row">
+          <!-- Category Tabs -->
+          <div class="category-tabs" role="tablist">
+            <button class="tab-btn active" data-category="all" id="tab-all">
+              <span class="tab-icon">🌐</span> 全部板块 (<span id="cnt-all">0</span>)
+            </button>
+            <button class="tab-btn" data-category="icar-info" id="tab-info">
+              <span class="tab-icon">⚡️</span> 行业前瞻突破 (<span id="cnt-info">0</span>)
+            </button>
+            <button class="tab-btn" data-category="icar-papers" id="tab-papers">
+              <span class="tab-icon">🎓</span> 顶刊前沿论文 (<span id="cnt-papers">0</span>)
+            </button>
+            <button class="tab-btn" data-category="icar-patents" id="tab-patents">
+              <span class="tab-icon">⚖️</span> 核心发明专利 (<span id="cnt-patents">0</span>)
+            </button>
+          </div>
+
+          <!-- Real-time Search Input -->
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="输入技术词/厂商检索（如 线控转向、EMB、伯特利、采埃孚...）" autocomplete="off">
+            <button id="search-clear" class="btn-clear" title="清空搜索" style="display:none;">✕</button>
+          </div>
+        </div>
+
+        <!-- Hot Tags Row -->
+        <div class="tag-filter-row" id="tag-filter-container">
+          <span class="tag-title">热点主题:</span>
+          <div class="tags-stream" id="tags-list">
+            <!-- Dynamic tags will be populated here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Content Feeds Section -->
+      <section class="feed-section">
+        <div class="feed-header-info">
+          <h2 class="feed-title" id="current-report-title">智能汽车底盘前瞻资讯速递</h2>
+          <span class="feed-meta" id="current-report-subtitle">加载中...</span>
+        </div>
+
+        <!-- Items Stream Container -->
+        <div class="items-stream" id="items-container">
+          <!-- Item cards rendered via JavaScript -->
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <p>正在连接情报雷达，拉取最新结构化速递数据...</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Slide-in Knowledge Base & Whitelist Drawer -->
+    <div id="whitelist-drawer" class="drawer-backdrop">
+      <div class="drawer-panel glass-drawer">
+        <div class="drawer-header">
+          <div class="drawer-title-group">
+            <span class="drawer-badge">KNOWLEDGE BASE</span>
+            <h3>底盘 VMC 领域知识白名单与降噪规则</h3>
+          </div>
+          <button id="btn-close-drawer" class="btn-close-drawer" title="关闭抽屉">✕</button>
+        </div>
+
+        <div class="drawer-body">
+          <div class="drawer-section">
+            <h4>🎯 核心定位与评分守卫</h4>
+            <p class="drawer-desc">
+              系统针对 <strong>车辆运动控制 (VMC)</strong> 与 <strong>线控底盘全域协同 (CMC)</strong> 注入独家量化白名单，对满足准入规则的技术主题与 Tier-1/OEM 提供量化加权，并对营销、降价促销、非底盘娱乐等内容执行反向降噪惩罚。
+            </p>
+          </div>
+
+          <div class="drawer-stats-grid" id="whitelist-stats-container">
+            <div class="stat-box">
+              <span class="num" id="wl-p0-topics">--</span>
+              <span class="lbl">P0 核心控制主题</span>
+            </div>
+            <div class="stat-box">
+              <span class="num" id="wl-p1-topics">--</span>
+              <span class="lbl">P1 强相关主题</span>
+            </div>
+            <div class="stat-box">
+              <span class="num" id="wl-p0-suppliers">--</span>
+              <span class="lbl">P0 核心 Tier-1 厂商</span>
+            </div>
+            <div class="stat-box">
+              <span class="num" id="wl-p1-suppliers">--</span>
+              <span class="lbl">P1 先进车企与新锐</span>
+            </div>
+          </div>
+
+          <div class="drawer-section">
+            <h4>🏆 P0 核心底盘控制主题（摘录）</h4>
+            <div class="chip-container" id="p0-topics-chips"></div>
+          </div>
+
+          <div class="drawer-section">
+            <h4>🏢 P0~P1 核心底盘供应链与厂商雷达（摘录）</h4>
+            <div class="chip-container" id="suppliers-chips"></div>
+          </div>
+
+          <div class="drawer-section">
+            <h4>🚫 反向强降噪剔除词汇库</h4>
+            <div class="chip-container negative" id="negative-chips"></div>
+          </div>
+        </div>
+
+        <div class="drawer-footer">
+          <span>文件路径: <code>data/vmc_whitelist.json</code> (支持热更新)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bottom-footer">
+      <div class="footer-left">
+        <span>Horizon_iCarInfo · 智能汽车底盘前瞻情报雷达</span>
+        <span class="sep">|</span>
+        <span>参赛展示版 · 零干扰可插拔架构</span>
+      </div>
+      <div class="footer-right">
+        <span>支持模型: DeepSeek · Claude · GPT · Gemini</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
