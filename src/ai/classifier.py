@@ -10,7 +10,7 @@ from .prompting.classification import (
     classification_user_prompt,
 )
 from .utils import parse_json_response
-from ..models import ClassificationResult, ContentItem, ProcessingResult
+from ..models import ClassificationResult, ContentItem, ProcessingResult, SourceType
 from ..processing.profiles import LoadedProfile, ProfileRegistry
 
 logger = logging.getLogger(__name__)
@@ -35,6 +35,17 @@ class ContentClassifier:
             self._candidate_ids(requested) if isinstance(requested, list) else None
         )
         requested_id = requested.strip() if isinstance(requested, str) else None
+
+        # Hard guard: icar-patents is strictly reserved for genuine SourceType.PATENTS items
+        if item.source_type != SourceType.PATENTS:
+            if requested_id == "icar-patents":
+                requested_id = self.profiles.default_profile
+            if candidate_ids is not None:
+                candidate_ids = tuple(p for p in candidate_ids if p != "icar-patents")
+            elif "icar-patents" in self.profiles.ids:
+                candidate_ids = tuple(p for p in self.profiles.ids if p != "icar-patents")
+        elif item.source_type == SourceType.PATENTS:
+            requested_id = "icar-patents"
         if (
             item.processing
             and item.processing.classification.method == "ai_match"

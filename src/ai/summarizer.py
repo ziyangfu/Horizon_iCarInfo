@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 from urllib.parse import quote, urlsplit
 
 from .localization import normalize_language
-from ..models import ContentItem
+from ..models import ContentItem, SourceType
 
 
 _CJK = r"[\u4e00-\u9fff\u3400-\u4dbf]"
@@ -393,23 +393,38 @@ class DailySummarizer:
             primary_content = _pangu(primary_content)
 
         # Source line with parts joined by " · ", link appended at end
-        source_type = item.source_type.value
-        source_parts = [_escape_markdown(source_type)]
-        if meta.get("subreddit"):
-            source_parts.append(_escape_markdown(f"r/{meta['subreddit']}"))
-        if meta.get("feed_name"):
-            source_parts.append(_escape_markdown(meta["feed_name"]))
+        if item.source_type == SourceType.PATENTS:
+            source_parts = ["Google Patents"]
+            pub_num = meta.get("publication_number") or meta.get("patent_id")
+            if pub_num:
+                source_parts.append(f"专利号: {pub_num}" if language == "zh" else f"Patent: {pub_num}")
+            if meta.get("assignee"):
+                source_parts.append(f"申请人: {meta['assignee']}" if language == "zh" else f"Assignee: {meta['assignee']}")
+            if meta.get("publication_date"):
+                source_parts.append(f"公开日: {meta['publication_date']}" if language == "zh" else f"Published: {meta['publication_date']}")
+            elif item.published_at:
+                if language == "zh":
+                    source_parts.append(f"{item.published_at.month}月{item.published_at.day}日")
+                else:
+                    source_parts.append(item.published_at.strftime("%b %d, %Y"))
         else:
-            source_parts.append(_escape_markdown(item.author or "unknown"))
-        if item.published_at:
-            if language == "zh":
-                source_parts.append(
-                    f"{item.published_at.month}月{item.published_at.day}日 "
-                    f"{item.published_at:%H:%M}"
-                )
+            source_type = item.source_type.value
+            source_parts = [_escape_markdown(source_type)]
+            if meta.get("subreddit"):
+                source_parts.append(_escape_markdown(f"r/{meta['subreddit']}"))
+            if meta.get("feed_name"):
+                source_parts.append(_escape_markdown(meta["feed_name"]))
             else:
-                day = item.published_at.strftime("%d").lstrip("0")
-                source_parts.append(item.published_at.strftime(f"%b {day}, %H:%M"))
+                source_parts.append(_escape_markdown(item.author or "unknown"))
+            if item.published_at:
+                if language == "zh":
+                    source_parts.append(
+                        f"{item.published_at.month}月{item.published_at.day}日 "
+                        f"{item.published_at:%H:%M}"
+                    )
+                else:
+                    day = item.published_at.strftime("%d").lstrip("0")
+                    source_parts.append(item.published_at.strftime(f"%b {day}, %H:%M"))
         if meta.get("is_oa"):
             pdf_url = _safe_url(meta.get("pdf_url"))
             if pdf_url:

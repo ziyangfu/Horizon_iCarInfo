@@ -1,14 +1,12 @@
-"""Google Patents scraper implementation with resilience fallback."""
+"""Google Patents scraper implementation for genuine patent documents only."""
 
 import html
 import logging
 import re
 import urllib.parse
 from datetime import datetime, timezone
-from email.utils import parsedate_to_datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
-import feedparser
 import httpx
 
 from .base import BaseScraper
@@ -16,18 +14,23 @@ from ..models import ContentItem, PatentQueryConfig, SourceType
 
 logger = logging.getLogger(__name__)
 
+# Valid patent publication number regex (e.g. CN114735076B, US20260137286A1, WO2026021196A1)
+PATENT_PUB_NUM_REGEX = re.compile(r"^[A-Z]{2}[0-9A-Z]{5,}$")
+
 
 class GooglePatentsScraper(BaseScraper):
-    """Scraper for patent publications and disclosures.
-    
-    Primary: Google Patents XHR query API (https://patents.google.com/xhr/query).
-    Fallback: Open Patent / IP Syndication search (https://news.google.com/rss/search)
-    when Google Patents is rate-limited or CAPTCHA-challenged (503/timeout).
+    """Scraper strictly for genuine patent publications.
+
+    Primary: Google Patents XHR query endpoint (https://patents.google.com/xhr/query).
+    Fallback: Direct Google Patents index retrieval (site:patents.google.com/patent/)
+    via search syndication when Google Patents blocks raw HTTP requests (503 / CAPTCHA).
+
+    Guaranteed constraint: All returned items MUST be authentic patent documents with
+    official publication numbers and Google Patents links. Never returns news articles.
     """
 
     SOURCE_TYPE = SourceType.PATENTS
     GOOGLE_PATENTS_XHR_URL = "https://patents.google.com/xhr/query"
-    FALLBACK_RSS_URL = "https://news.google.com/rss/search"
 
     def __init__(self, config: PatentQueryConfig, http_client: httpx.AsyncClient):
         super().__init__({"patents": config}, http_client)
@@ -35,31 +38,40 @@ class GooglePatentsScraper(BaseScraper):
 
     @staticmethod
     def _clean_text(raw_text: Optional[str]) -> str:
-        """Strip HTML tags and unescape HTML entities."""
+        """Strip HTML tags, unescape HTML entities, and normalize whitespace."""
         if not raw_text:
             return ""
-        text = re.sub(r"<[^>]+>", "", raw_text)
-        return html.unescape(text).strip()
+        text = re.sub(r"<[^>]+>", " ", raw_text)
+        text = html.unescape(text)
+        return " ".join(text.split()).strip()
+
+    @staticmethod
+    def _is_valid_patent_num(num: Optional[str]) -> bool:
+        """Verify that a string looks like an authentic patent publication number."""
+        if not num:
+            return False
+        clean = num.strip().replace("-", "").replace("/", "")
+        return bool(PATENT_PUB_NUM_REGEX.match(clean))
 
     def _build_google_patents_query(self) -> str:
-        """Build query string for Google Patents."""
+        """Build single-encoded query string for Google Patents XHR."""
         parts = []
         keywords = self.patent_config.keywords
         assignees = self.patent_config.assignees
 
         if keywords:
-            kw_or = " OR ".join([f'"{k.strip()}"' for k in keywords if k.strip()])
+            kw_or = " OR ".join([f'"{k.strip()}"' for k in keywords[:8] if k.strip()])
             parts.append(f"({kw_or})")
 
         if assignees:
-            as_or = " OR ".join([f'assignee:"{a.strip()}"' for a in assignees if a.strip()])
+            as_or = " OR ".join([f'assignee:"{a.strip()}"' for a in assignees[:8] if a.strip()])
             parts.append(f"({as_or})")
 
-        query_str = " AND ".join(parts) if parts else "chassis"
-        return f"q={urllib.parse.quote(query_str)}&sort=new&num={self.patent_config.max_results}"
+        query_str = " ".join(parts) if parts else "chassis"
+        return f"q={query_str}&sort=new&num={self.patent_config.max_results}"
 
     async def fetch(self, since: datetime) -> List[ContentItem]:
-        """Fetch patent items published since the given time."""
+        """Fetch authentic patent items published since the given time."""
         if not self.patent_config.enabled:
             return []
 
@@ -67,13 +79,23 @@ class GooglePatentsScraper(BaseScraper):
         try:
             items = await self._fetch_from_google_patents(since)
             if items:
-                logger.info("Google Patents XHR returned %d patent items", len(items))
+                logger.info("Google Patents XHR returned %d genuine patent items", len(items))
                 return items
         except Exception as e:
-            logger.warning("Google Patents XHR query failed (%s); switching to patent syndication fallback", e)
+            logger.warning("Google Patents XHR query failed (%s); trying Google Patents index fallback", e)
 
-        # Attempt 2: Fallback to Patent & IP Syndication search
-        return await self._fetch_from_patent_syndication(since)
+        # Attempt 2: Fallback to Google Patents index search (site:patents.google.com/patent/)
+        try:
+            items = await self._fetch_from_google_patents_index(since)
+            if items:
+                logger.info("Google Patents index search returned %d genuine patent items", len(items))
+                return items
+        except Exception as e:
+            logger.error("Google Patents index search failed: %s", e)
+
+        # Invariant: If no genuine patents are found, return empty list.
+        # NEVER fall back to news or blogs.
+        return []
 
     async def _fetch_from_google_patents(self, since: datetime) -> List[ContentItem]:
         """Fetch patents directly from Google Patents XHR endpoint."""
@@ -109,7 +131,7 @@ class GooglePatentsScraper(BaseScraper):
         for entry in raw_results:
             patent = entry.get("patent", {})
             pub_num = patent.get("publication_number")
-            if not pub_num:
+            if not self._is_valid_patent_num(pub_num):
                 continue
 
             raw_title = patent.get("title", "Untitled Patent")
@@ -131,8 +153,8 @@ class GooglePatentsScraper(BaseScraper):
                 except ValueError:
                     pass
 
-            # Filter by since date if applicable
-            if pub_dt < since:
+            # Filter by since date if publication date is available
+            if pub_date_str and pub_dt < since:
                 continue
 
             patent_url = f"https://patents.google.com/patent/{pub_num}/zh"
@@ -176,73 +198,112 @@ class GooglePatentsScraper(BaseScraper):
 
         return items[: self.patent_config.max_results]
 
-    async def _fetch_from_patent_syndication(self, since: datetime) -> List[ContentItem]:
-        """Fallback: Fetch recent patent disclosures via syndicated patent news/releases."""
-        keywords = self.patent_config.keywords or ["线控底盘", "线控转向", "线控制动", "EMB", "智能底盘"]
-        assignees = self.patent_config.assignees or ["伯特利", "同驭", "拿森", "博世", "采埃孚", "大陆", "比亚迪"]
-
-        kw_query = " OR ".join(keywords[:5])
-        as_query = " OR ".join(assignees[:6])
-        query = f"专利 ({kw_query}) ({as_query})"
-
-        url = f"{self.FALLBACK_RSS_URL}?q={urllib.parse.quote(query)}&hl=zh-CN&gl=CN&ceid=CN:zh-Hans"
-
+    async def _fetch_from_google_patents_index(self, since: datetime) -> List[ContentItem]:
+        """Fallback: Retrieve genuine Google Patents documents via site-specific search."""
         try:
-            response = await self.client.get(url, timeout=15.0)
-            response.raise_for_status()
-            feed = feedparser.parse(response.text)
-        except Exception as e:
-            logger.error("Error fetching patent syndication feed: %s", e)
+            from ddgs import DDGS
+        except ImportError:
+            logger.warning("ddgs package not installed; skipping Google Patents index search")
             return []
 
-        items: List[ContentItem] = []
+        keywords = self.patent_config.keywords or [
+            "整车运动控制", "运动控制", "智能控制", "线控转向", "线控制动", "EMB", "主动悬架"
+        ]
+        assignees = self.patent_config.assignees or [
+            "伯特利", "同驭", "拿森", "博世", "采埃孚", "比亚迪", "华为"
+        ]
+
+        # Construct focused thematic queries on Google Patents domain
+        kw_chunk = " OR ".join(keywords[:6])
+        as_chunk = " OR ".join(assignees[:6])
+        search_queries = [
+            f"site:patents.google.com/patent/ ({kw_chunk}) ({as_chunk})",
+            f"site:patents.google.com/patent/ (整车运动控制 OR 运动控制 OR 智能控制) (比亚迪 OR 华为 OR 地平线 OR 蔚来)",
+        ]
+
         category_tag = self.patent_config.category or "chassis-patent"
         profile_route = self.patent_config.profile or "icar-patents"
+        items: List[ContentItem] = []
+        seen_pub_nums: Set[str] = set()
 
-        for entry in feed.entries[: self.patent_config.max_results]:
-            title = self._clean_text(entry.get("title", ""))
-            if not title:
+        ddgs = DDGS()
+        for query in search_queries:
+            try:
+                results = list(ddgs.text(query, max_results=self.patent_config.max_results))
+            except Exception as e:
+                logger.warning("Search query failed for '%s': %s", query, e)
                 continue
-            if not title.startswith("[专利]") and not title.startswith("[Patent]"):
-                title = f"[专利] {title}"
 
-            link = entry.get("link", "")
-            summary = self._clean_text(entry.get("summary", title))
+            for r in results:
+                url = r.get("href", "")
+                m = re.search(r"patents\.google\.com/patent/([A-Z]{2}[0-9A-Z]+)", url)
+                if not m:
+                    continue
 
-            published_dt = datetime.now(timezone.utc)
-            if entry.get("published"):
-                try:
-                    published_dt = parsedate_to_datetime(entry.published)
-                    if published_dt.tzinfo is None:
-                        published_dt = published_dt.replace(tzinfo=timezone.utc)
-                except Exception:
-                    pass
+                pub_num = m.group(1).upper()
+                if not self._is_valid_patent_num(pub_num) or pub_num in seen_pub_nums:
+                    continue
+                seen_pub_nums.add(pub_num)
 
-            source_name = "专利前瞻资讯"
-            if entry.get("source", {}).get("title"):
-                source_name = entry.source.title
+                raw_title = r.get("title", "")
+                # Clean Google Patents title format: "CN123456A - Title - Google Patents"
+                clean_title = re.sub(r"^[A-Z]{2}[0-9A-Z]+\s*[-–—]\s*", "", raw_title)
+                clean_title = re.sub(r"\s*[-–—]\s*Google\s+Patent.*$", "", clean_title, flags=re.IGNORECASE).strip()
+                clean_title = clean_title.rstrip(". \t\n")
+                if not clean_title or clean_title.startswith("patents.google.com"):
+                    clean_title = f"专利 {pub_num}"
+                if not clean_title.startswith("[专利]") and not clean_title.startswith("[Patent]"):
+                    clean_title = f"[专利] {clean_title}"
 
-            native_id = entry.get("id") or link or title
-            clean_id = re.sub(r"[^a-zA-Z0-9_-]+", "", native_id)[-32:]
+                snippet = self._clean_text(r.get("body", ""))
 
-            content_text = f"来源与主体: {source_name}\n发布时间: {published_dt:%Y-%m-%d %H:%M}\n\n专利公开与方案说明:\n{summary}"
+                # Deduce assignee from matching keywords in snippet/title or assignees list
+                matched_assignee = "未知申请人"
+                assignee_match = re.search(r"(?:申请人|专利权人)[：:]\s*([^\s,，。；;]+)", snippet)
+                if assignee_match:
+                    matched_assignee = assignee_match.group(1).strip()
+                else:
+                    for a in assignees:
+                        if a in snippet or a in clean_title:
+                            matched_assignee = a
+                            break
 
-            items.append(
-                ContentItem(
-                    id=self._generate_id("patents", "disclosure", clean_id or "item"),
-                    source_type=self.SOURCE_TYPE,
-                    title=title,
-                    url=link,
-                    content=content_text,
-                    author=source_name[:100],
-                    published_at=published_dt,
-                    metadata={
-                        "patent_id": clean_id,
-                        "source_name": source_name,
-                        "category": category_tag,
-                    },
-                    profile=profile_route,
+                pub_dt = datetime.now(timezone.utc)
+                patent_url = f"https://patents.google.com/patent/{pub_num}/zh"
+
+                content_parts = [
+                    f"专利号: {pub_num}",
+                    f"申请人 / 专利权人: {matched_assignee}",
+                ]
+                if snippet:
+                    content_parts.append(f"\n摘要与方案简述:\n{snippet}")
+
+                content_text = "\n".join(content_parts)
+
+                items.append(
+                    ContentItem(
+                        id=self._generate_id("patents", "google", pub_num),
+                        source_type=self.SOURCE_TYPE,
+                        title=clean_title,
+                        url=patent_url,
+                        content=content_text,
+                        author=matched_assignee[:100],
+                        published_at=pub_dt,
+                        metadata={
+                            "patent_id": pub_num,
+                            "publication_number": pub_num,
+                            "assignee": matched_assignee,
+                            "category": category_tag,
+                            "summary": snippet,
+                        },
+                        profile=profile_route,
+                    )
                 )
-            )
 
-        return items
+                if len(items) >= self.patent_config.max_results:
+                    break
+
+            if len(items) >= self.patent_config.max_results:
+                break
+
+        return items[: self.patent_config.max_results]
