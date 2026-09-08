@@ -2,7 +2,6 @@
   "_comment": "Horizon VMC Topic & Supplier Whitelist Configuration. You can modify, add, or remove topics, suppliers, products, and noise reduction rules in this file at any time.",
   "topics": {
     "p0_core": [
-      "__test_vmc_auto_tuning_term__",
       "vehicle motion control",
       "vehicle motion management",
       "integrated vehicle dynamics control",
