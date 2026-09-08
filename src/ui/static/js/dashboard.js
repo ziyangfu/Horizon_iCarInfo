@@ -489,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateDrawerUI() {
     if (!state.whitelistConfig) return;
 
-    // Update Top 4 Metric Boxes
+    // Update Top 4 Metric Boxes with key fallback
     const topics = state.whitelistConfig.topics || {};
     const suppliers = state.whitelistConfig.suppliers || {};
     const wlP0T = document.getElementById('wl-p0-topics');
@@ -497,10 +497,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const wlP0S = document.getElementById('wl-p0-suppliers');
     const wlP1S = document.getElementById('wl-p1-suppliers');
 
-    if (wlP0T) wlP0T.textContent = (topics.p0_core || []).length;
-    if (wlP1T) wlP1T.textContent = (topics.p1_strongly_related || []).length;
-    if (wlP0S) wlP0S.textContent = (suppliers.p0_tier1_core || []).length;
-    if (wlP1S) wlP1S.textContent = (suppliers.p1_tier1_oem_advanced || []).length;
+    const p0TopicsCount = (topics.p0_core || []).length;
+    const p1TopicsCount = (topics.p1_strongly_related || []).length;
+    const p0SuppliersCount = (suppliers.p0_core || suppliers.p0_tier1_core || []).length;
+    const p1SuppliersCount = (suppliers.p1_tier1 || suppliers.p1_tier1_oem_advanced || []).length;
+
+    if (wlP0T) wlP0T.textContent = p0TopicsCount;
+    if (wlP1T) wlP1T.textContent = p1TopicsCount;
+    if (wlP0S) wlP0S.textContent = p0SuppliersCount;
+    if (wlP1S) wlP1S.textContent = p1SuppliersCount;
+
+    // Update group options with real-time count badges
+    if (selectWhitelistGroup) {
+      Array.from(selectWhitelistGroup.options).forEach(opt => {
+        const path = opt.value;
+        const arr = getGroupArray(path) || [];
+        // Clean previous count badge e.g. " (54条)"
+        const baseLabel = opt.getAttribute('data-base-label') || opt.textContent.replace(/\s*\(\d+条\)$/, '');
+        opt.setAttribute('data-base-label', baseLabel);
+        opt.textContent = `${baseLabel} (${arr.length}条)`;
+      });
+    }
 
     // Render current active group chips
     renderCurrentGroupChips();
@@ -514,17 +531,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Resolve array from nested key path (e.g. 'topics.p0_core')
+  // Resolve array from nested key path with fallback mappings
   function getGroupArray(path) {
     if (!state.whitelistConfig) return null;
-    const parts = path.split('.');
+
+    // Key aliases mapping to guarantee seamless data retrieval
+    const ALIAS_MAP = {
+      'suppliers.p0_tier1_core': 'suppliers.p0_core',
+      'suppliers.p1_tier1_oem_advanced': 'suppliers.p1_tier1',
+      'suppliers.p2_tier2_specialized': 'suppliers.p2_tools_software_services',
+      'suppliers.p3_oem_brands': 'suppliers.p3_oem',
+      'topics.p2_methods_tools': 'topics.p2_methods_tools_ai',
+      'topics.p3_general_control': 'topics.p3_broad_context_required',
+      'noise_reduction.negative_keywords': 'noise_reduction.penalize_keywords',
+    };
+
+    let targetPath = ALIAS_MAP[path] || path;
+
+    const parts = targetPath.split('.');
     let cur = state.whitelistConfig;
     for (let i = 0; i < parts.length - 1; i++) {
       if (!cur[parts[i]]) cur[parts[i]] = {};
       cur = cur[parts[i]];
     }
     const lastKey = parts[parts.length - 1];
+
+    // If key not found, check if reverse alias exists
     if (!Array.isArray(cur[lastKey])) {
+      for (const [aliasKey, origKey] of Object.entries(ALIAS_MAP)) {
+        if (origKey === targetPath) {
+          const aliasParts = aliasKey.split('.');
+          let aCur = state.whitelistConfig;
+          for (let j = 0; j < aliasParts.length - 1; j++) {
+            if (aCur) aCur = aCur[aliasParts[j]];
+          }
+          if (aCur && Array.isArray(aCur[aliasParts[aliasParts.length - 1]])) {
+            return aCur[aliasParts[aliasParts.length - 1]];
+          }
+        }
+      }
       cur[lastKey] = [];
     }
     return cur[lastKey];

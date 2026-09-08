@@ -105,8 +105,8 @@ class DashboardRequestHandler(SimpleHTTPRequestHandler):
                 "stats": {
                     "p0_topics_count": len(data.get("topics", {}).get("p0_core", [])),
                     "p1_topics_count": len(data.get("topics", {}).get("p1_strongly_related", [])),
-                    "p0_suppliers_count": len(data.get("suppliers", {}).get("p0_tier1_core", [])),
-                    "p1_suppliers_count": len(data.get("suppliers", {}).get("p1_tier1_oem_advanced", [])),
+                    "p0_suppliers_count": len(data.get("suppliers", {}).get("p0_core", data.get("suppliers", {}).get("p0_tier1_core", []))),
+                    "p1_suppliers_count": len(data.get("suppliers", {}).get("p1_tier1", data.get("suppliers", {}).get("p1_tier1_oem_advanced", []))),
                 }
             })
         except json.JSONDecodeError as e:
@@ -156,21 +156,22 @@ class DashboardRequestHandler(SimpleHTTPRequestHandler):
                 suppliers = data.get("suppliers", {})
                 categories = data.get("recommended_categories", [])
 
+                noise_words = data.get("noise_reduction", {}).get("penalize_keywords", data.get("noise_reduction", {}).get("negative_keywords", []))
                 summary = {
                     "raw_config": data,
                     "topics": topics,
                     "suppliers": suppliers,
                     "categories": categories,
-                    "noise_words": data.get("noise_reduction", {}).get("negative_keywords", []),
+                    "noise_words": noise_words,
                     "stats": {
                         "p0_topics_count": len(topics.get("p0_core", [])),
                         "p1_topics_count": len(topics.get("p1_strongly_related", [])),
-                        "p2_topics_count": len(topics.get("p2_methods_tools", [])),
-                        "p3_topics_count": len(topics.get("p3_general_control", [])),
-                        "p0_suppliers_count": len(suppliers.get("p0_tier1_core", [])),
-                        "p1_suppliers_count": len(suppliers.get("p1_tier1_oem_advanced", [])),
-                        "p2_suppliers_count": len(suppliers.get("p2_tier2_specialized", [])),
-                        "p3_suppliers_count": len(suppliers.get("p3_oem_brands", [])),
+                        "p2_topics_count": len(topics.get("p2_methods_tools_ai", topics.get("p2_methods_tools", []))),
+                        "p3_topics_count": len(topics.get("p3_broad_context_required", topics.get("p3_general_control", []))),
+                        "p0_suppliers_count": len(suppliers.get("p0_core", suppliers.get("p0_tier1_core", []))),
+                        "p1_suppliers_count": len(suppliers.get("p1_tier1", suppliers.get("p1_tier1_oem_advanced", []))),
+                        "p2_suppliers_count": len(suppliers.get("p2_tools_software_services", suppliers.get("p2_tier2_specialized", []))),
+                        "p3_suppliers_count": len(suppliers.get("p3_oem", suppliers.get("p3_oem_brands", []))),
                     }
                 }
                 self.send_json({"code": 0, "data": summary})

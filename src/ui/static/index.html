@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css?v=20260908_fix">
+  <link rel="stylesheet" href="css/dashboard.css?v=20260908_v3">
 </head>
 <body>
   <!-- Ambient background glow effects -->
@@ -233,17 +233,19 @@
                 <optgroup label="技术控制主题 (Topics)">
                   <option value="topics.p0_core" selected>🎯 P0 核心底盘运动控制主题</option>
                   <option value="topics.p1_strongly_related">📌 P1 强相关底盘技术主题</option>
-                  <option value="topics.p2_methods_tools">🛠️ P2 动力学方法与工具库</option>
-                  <option value="topics.p3_general_control">📐 P3 泛控制与辅助主题</option>
+                  <option value="topics.p2_methods_tools_ai">🛠️ P2 动力学方法与工具库</option>
+                  <option value="topics.p3_broad_context_required">📐 P3 泛控制与上下文约束主题</option>
                 </optgroup>
                 <optgroup label="供应链与厂商 (Suppliers)">
-                  <option value="suppliers.p0_tier1_core">🏆 P0 核心 Tier-1 供应商 (博世/采埃孚/同驭/伯特利等)</option>
-                  <option value="suppliers.p1_tier1_oem_advanced">🚗 P1 先进车企与新锐线控供应商</option>
-                  <option value="suppliers.p2_tier2_specialized">⚙️ P2 专业底盘 Tier-2 与核心零部件厂</option>
-                  <option value="suppliers.p3_oem_brands">🏷️ P3 主流乘用车 OEM 品牌</option>
+                  <option value="suppliers.p0_core">🏆 P0 核心 Tier-1 供应商 (博世/采埃孚/同驭/伯特利等)</option>
+                  <option value="suppliers.p1_tier1">🚗 P1 主流与先进零部件供应商 (京西/爱信/克诺尔等)</option>
+                  <option value="suppliers.p2_tools_software_services">⚙️ P2 专业软件与仿真测试服务商</option>
+                  <option value="suppliers.p3_oem">🏷️ P3 主流整车 OEM 品牌 (奔驰/宝马/比亚迪/特斯拉等)</option>
                 </optgroup>
                 <optgroup label="反向降噪与过滤 (Noise Reduction)">
-                  <option value="noise_reduction.negative_keywords">🚫 反向强降噪扣分关键词 (促销/销量/娱乐等)</option>
+                  <option value="noise_reduction.penalize_keywords">🚫 反向扣分降噪关键词 (促销/销量/娱乐等)</option>
+                  <option value="noise_reduction.protected_keywords">🛡️ 受保护特例关键词</option>
+                  <option value="noise_reduction.required_vmc_context">🔍 VMC 准入上下文约束词</option>
                 </optgroup>
               </select>
             </div>
@@ -308,6 +310,6 @@
     </footer>
   </div>
 
-  <script src="js/dashboard.js?v=20260908_fix"></script>
+  <script src="js/dashboard.js?v=20260908_v3"></script>
 </body>
 </html>
