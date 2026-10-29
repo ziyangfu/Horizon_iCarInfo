@@ -1,0 +1,2 @@
+# Daily at 07:00 in TZ (Asia/Shanghai by default).
+0 7 * * * cd /app && /app/.venv/bin/horizon -c /app/data/config.icar.json --hours 24

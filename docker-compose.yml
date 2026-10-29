@@ -11,6 +11,6 @@ services:
     environment:
       - TZ=UTC
     restart: "no"
-    # Run daily at 8:00 AM UTC (adjust as needed)
+    # One-shot execution; daily scheduling uses docker-compose.scheduler.yml.
     # For one-time run, use: docker compose run --rm horizon
     command: ["--hours", "24"]

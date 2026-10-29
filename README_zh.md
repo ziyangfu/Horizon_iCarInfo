@@ -349,6 +349,8 @@ docker compose run --rm horizon [OPTIONS]
 
 ### 4. 自动化（可选）
 
+在 Linux 服务器上可将程序和每天北京时间 07:00 的定时任务一起放入 Docker，无需宿主机 root 权限。配置与启动步骤见 [Docker 定时部署](docs/docker-scheduler.md)。
+
 Horizon 非常适合作为 **GitHub Actions** 定时任务运行。查看 [`.github/workflows/daily-summary.yml`](.github/workflows/daily-summary.yml) 获取现成的工作流配置，可自动生成日报并部署到 GitHub Pages。
 
 ## 支持的信息源

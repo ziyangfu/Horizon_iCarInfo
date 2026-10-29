@@ -1,0 +1,24 @@
+services:
+  horizon-scheduler:
+    build:
+      context: .
+      target: scheduler
+    user: "${HORIZON_UID:?Set HORIZON_UID in .env}:${HORIZON_GID:?Set HORIZON_GID in .env}"
+    network_mode: host
+    volumes:
+      - ./data:/app/data
+      - ./profiles:/app/profiles:ro
+      - ./docs:/app/docs
+      - ./.env:/app/.env:ro
+      - ./docker/horizon.crontab:/app/horizon.crontab:ro
+    environment:
+      TZ: Asia/Shanghai
+      NO_PROXY: localhost,127.0.0.1,192.168.1.10
+      no_proxy: localhost,127.0.0.1,192.168.1.10
+    restart: unless-stopped
+    stop_grace_period: 5m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
