@@ -68,6 +68,22 @@ Supported styles:
 This setting affects terminal output only. Icons embedded in generated Markdown
 and webhook message content are unchanged.
 
+## Summary Score Display
+
+Set `display.show_scores` to `false` to hide AI scores in the generated Markdown
+table of contents, item headings, published pages, and email bodies. The default
+is `true`, which keeps scores visible. This setting does not change scoring,
+filtering, sorting, diagnostic reports, or webhook messages.
+
+```json
+{
+  "display": {
+    "icon_style": "emoji",
+    "show_scores": false
+  }
+}
+```
+
 ## Processing Profiles
 
 The `processing` section controls profile discovery and the fallback used when

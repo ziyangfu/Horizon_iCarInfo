@@ -3,6 +3,8 @@
 import asyncio
 from datetime import datetime, timezone
 
+import pytest
+
 from src.ai.summarizer import DailySummarizer
 from src.models import (
     ArtifactSource,
@@ -11,6 +13,7 @@ from src.models import (
     ContentArtifact,
     ContentBlock,
     ContentItem,
+    DisplayConfig,
     ProcessingResult,
     SourceType,
 )
@@ -58,6 +61,37 @@ def _make_item(idx: int) -> ContentItem:
         ),
     )
     return item
+
+
+@pytest.mark.parametrize("show_scores", [True, False])
+@pytest.mark.parametrize("language", ["en", "zh"])
+@pytest.mark.parametrize("score", [8.0, 0.0, None])
+def test_summary_score_display_preserves_content(show_scores, language, score):
+    config = DisplayConfig.model_validate({"show_scores": show_scores})
+    item = _make_item(1)
+    item.processing.analysis.score = score
+    item.metadata["is_oa"] = True
+    summarizer = DailySummarizer(show_scores=config.show_scores)
+
+    result = _run_async(summarizer.generate_summary(
+        [item], "2026-10-28", 10, language=language,
+    ))
+
+    score_label = f"⭐️ {score if score is not None else '?'}/10"
+    assert result.count(score_label) == (2 if show_scores else 0)
+    assert "[Important Item 1](#item-tech-news-1)" in result
+    assert "### [Important Item 1](https://example.com/items/1)" in result
+    assert "Summary for item 1." in result
+    assert "🔓" in result
+    assert item.processing.analysis.score == score
+
+
+def test_summary_shows_scores_by_default():
+    assert DisplayConfig().show_scores is True
+    result = _run_async(DailySummarizer().generate_summary(
+        [_make_item(1)], "2026-10-28", 10,
+    ))
+    assert result.count("⭐️ 8.0/10") == 2
 
 
 def test_generate_webhook_overview_lists_items_without_full_details():

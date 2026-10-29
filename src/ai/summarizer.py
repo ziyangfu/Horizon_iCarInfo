@@ -122,9 +122,11 @@ class DailySummarizer:
         self,
         profile_names: Optional[Dict[str, Dict[str, str]]] = None,
         profile_order: Optional[List[str]] = None,
+        show_scores: bool = True,
     ):
         self.profile_names = profile_names or {}
         self.profile_order = profile_order or []
+        self.show_scores = show_scores
 
     @staticmethod
     def _profile_id(item: ContentItem) -> str:
@@ -255,9 +257,10 @@ class DailySummarizer:
                     title = _pangu(title)
                 meta = view_item.item.metadata
                 oa_badge = " 🔓" if meta.get("is_oa") else ""
+                score_suffix = f" \u2b50\ufe0f {view_item.score}/10" if self.show_scores else ""
                 toc_entries.append(
-                    f"{view_item.index}. [{title}](#{view_item.anchor_id}) "
-                    f"\u2b50\ufe0f {view_item.score}/10{oa_badge}"
+                    f"{view_item.index}. [{title}](#{view_item.anchor_id})"
+                    f"{score_suffix}{oa_badge}"
                 )
             toc_sections.append("\n".join(toc_entries))
             body_sections.append(f"## {profile_name}\n\n")
@@ -279,6 +282,7 @@ class DailySummarizer:
                     anchor_id=view_item.anchor_id,
                     title_override=view_item.title,
                     score_override=view_item.score,
+                    show_scores=self.show_scores,
                 )
                 for view_item in group.items
             )
@@ -369,6 +373,7 @@ class DailySummarizer:
         anchor_id: Optional[str] = None,
         title_override: Optional[str] = None,
         score_override: float | str | None = None,
+        show_scores: bool = True,
     ) -> str:
         """Format a single ContentItem into Markdown."""
         artifact = item.processing.artifacts.get(language) if item.processing else None
@@ -457,9 +462,10 @@ class DailySummarizer:
 
         title_link = f"[{title}]({url})" if url else title
 
+        score_suffix = f" \u2b50\ufe0f {score}/10" if show_scores else ""
         lines = [
             f'<a id="{anchor_id or f"item-{index}"}"></a>',
-            f"{'#' * heading_level} {title_link} \u2b50\ufe0f {score}/10",  # ⭐️
+            f"{'#' * heading_level} {title_link}{score_suffix}",
         ]
         if meta.get("is_oa"):
             pdf_url = _safe_url(meta.get("pdf_url"))

@@ -278,6 +278,20 @@ cp data/config.example.json data/config.json  # 自定义信息源
 [处理配置文件](docs/profiles.md)。筛选阈值和主题去重等个人偏好应配置在
 `processing.profile_settings`，而不是写入处理配置文件。
 
+**评分显示（可选）**
+
+通过 `display.show_scores` 控制生成文档和邮件中的评分显示，默认 `true`
+保留评分；设为 `false` 则隐藏目录和正文标题中的评分，不影响筛选、排序及诊断记录。
+
+```json
+{
+  "display": {
+    "icon_style": "emoji",
+    "show_scores": false
+  }
+}
+```
+
 **均衡日报（可选）**
 
 可以限制日报总条数，并避免单一类别占据过多内容。类别来自

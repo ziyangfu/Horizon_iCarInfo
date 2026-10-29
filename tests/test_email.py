@@ -1,8 +1,11 @@
+import asyncio
+from datetime import datetime, timezone
 from email.mime.multipart import MIMEMultipart
 
 import pytest
 
-from src.models import EmailConfig
+from src.ai.summarizer import DailySummarizer
+from src.models import ContentItem, EmailConfig, SourceType
 from src.services.email import EmailManager
 
 
@@ -61,6 +64,30 @@ def _email_config(**overrides):
     }
     data.update(overrides)
     return EmailConfig(**data)
+
+
+@pytest.mark.parametrize("show_scores", [True, False])
+def test_summary_score_display_in_both_email_parts(monkeypatch, show_scores):
+    monkeypatch.setenv("EMAIL_PASSWORD", "secret")
+    monkeypatch.setattr("src.services.email.smtplib.SMTP_SSL", FakeSMTP)
+    FakeSMTP.instances = []
+    item = ContentItem(
+        id="rss:test", source_type=SourceType.RSS,
+        title="Example item", url="https://example.com/item", content="Content",
+        published_at=datetime(2026, 10, 28, tzinfo=timezone.utc),
+    )
+    summary = asyncio.run(DailySummarizer(show_scores=show_scores).generate_summary(
+        [item], "2026-10-28", 1, language="zh",
+    ))
+
+    EmailManager(_email_config()).send_daily_summary(
+        summary, "Daily", ["user@example.com"],
+    )
+
+    for part in FakeSMTP.instances[0].messages[0].get_payload():
+        body = part.get_payload(decode=True).decode("utf-8")
+        assert ("⭐️ ?/10" in body) is show_scores
+        assert "Example item" in body
 
 
 def test_send_daily_summary_uses_smtp_username_when_configured(monkeypatch):

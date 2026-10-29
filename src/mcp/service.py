@@ -557,6 +557,7 @@ class HorizonPipelineService:
         summarizer = ctx.runtime.DailySummarizer(
             profile_names=self._profiles(ctx).names,
             profile_order=ctx.config.digest.profile_order,
+            show_scores=ctx.config.display.show_scores,
         )
         summary = await summarizer.generate_summary(
             items,

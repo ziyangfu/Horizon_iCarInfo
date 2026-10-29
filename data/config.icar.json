@@ -11,7 +11,8 @@
     ]
   },
   "display": {
-    "icon_style": "emoji"
+    "icon_style": "emoji",
+    "show_scores": false
   },
   "email": {
     "enabled": true,

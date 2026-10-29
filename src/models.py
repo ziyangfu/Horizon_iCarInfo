@@ -615,11 +615,12 @@ class ProcessingConfig(BaseModel):
 
 
 class DisplayConfig(BaseModel):
-    """Controls terminal output presentation."""
+    """Controls terminal and summary output presentation."""
 
     model_config = ConfigDict(extra="forbid")
 
     icon_style: Literal["emoji", "nerd", "ascii"] = "emoji"
+    show_scores: bool = True
 
 
 class CollectionConfig(BaseModel):
