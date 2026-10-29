@@ -26,6 +26,8 @@ class ArXivScraper(BaseScraper):
         if not self.config.get("enabled", True):
             return []
 
+        since = self._effective_since(since, self.arxiv_config.lookback_hours)
+
         categories = self.config.get(
             "categories", ["cs.RO", "cs.CV", "eess.SY", "cs.SY"]
         )
@@ -131,6 +133,7 @@ class ArXivScraper(BaseScraper):
                         "summary": summary,
                         "is_oa": True,
                         "pdf_url": pdf_url,
+                        "collection_window_hours": self.arxiv_config.lookback_hours,
                     },
                     profile=profile_route,
                 )

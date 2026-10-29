@@ -62,7 +62,7 @@ def test_arxiv_scraper_disabled() -> None:
 
 
 def test_arxiv_scraper_fetch_valid() -> None:
-    feed_xml = _arxiv_atom_feed(_arxiv_entry())
+    feed_xml = _arxiv_atom_feed(_arxiv_entry(published=_now().strftime("%Y-%m-%dT%H:%M:%SZ")))
     client = _mock_client(feed_xml)
     config = ArXivConfig(
         enabled=True,

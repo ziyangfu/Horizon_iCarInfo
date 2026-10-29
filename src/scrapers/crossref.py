@@ -26,6 +26,8 @@ class CrossrefScraper(BaseScraper):
         if not self.config.get("enabled", True):
             return []
 
+        since = self._effective_since(since, self.journal_config.lookback_hours)
+
         issn = (self.config.get("issn") or "2624-8921").strip()
         journal_name = self.config.get("journal_name") or "MDPI Vehicles"
         keywords = self.config.get("keywords", [])
@@ -81,7 +83,7 @@ class CrossrefScraper(BaseScraper):
         for entry in raw_items:
             # 1. Parse publication date
             published_dt = self._extract_published_date(entry)
-            if not published_dt or published_dt < since:
+            if not published_dt or not since.date() <= published_dt.date() <= datetime.now(timezone.utc).date():
                 continue
 
             # 2. Extract DOI & URL
@@ -143,6 +145,7 @@ class CrossrefScraper(BaseScraper):
                         "summary": clean_abstract,
                         "is_oa": is_oa,
                         "pdf_url": pdf_url,
+                        "collection_window_hours": self.journal_config.lookback_hours,
                     },
                     profile=profile_route,
                 )

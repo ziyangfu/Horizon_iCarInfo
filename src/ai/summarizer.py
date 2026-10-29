@@ -150,6 +150,9 @@ class DailySummarizer:
         grouped_items: Dict[str, List[ContentItem]] = {}
         for item in items:
             grouped_items.setdefault(self._profile_id(item), []).append(item)
+        for profile_id in self.profile_order:
+            if profile_id.startswith("icar-"):
+                grouped_items.setdefault(profile_id, [])
 
         ordered_groups = list(grouped_items.items())
         if self.profile_order:
@@ -258,6 +261,14 @@ class DailySummarizer:
                 )
             toc_sections.append("\n".join(toc_entries))
             body_sections.append(f"## {profile_name}\n\n")
+            if not group.items:
+                body_sections.append("本期暂无符合收录条件的内容。\n\n" if language == "zh" else "No qualifying items in this issue.\n\n")
+            windows = [view_item.item.metadata.get("collection_window_hours") for view_item in group.items]
+            extended_windows = [window for window in windows if isinstance(window, int) and window > 24]
+            if extended_windows:
+                hours = max(extended_windows)
+                note = f"近 {hours} 小时公开内容追踪，按真实发表／公开日期收录。" if language == "zh" else f"Tracking publications from the last {hours} hours, using verified publication dates."
+                body_sections.append(f"> {note}\n\n")
             body_sections.extend(
                 self._format_item(
                     view_item.item,
@@ -419,8 +430,9 @@ class DailySummarizer:
             if item.published_at:
                 if language == "zh":
                     source_parts.append(
-                        f"{item.published_at.month}月{item.published_at.day}日 "
-                        f"{item.published_at:%H:%M}"
+                        item.published_at.strftime("%Y-%m-%d")
+                        if meta.get("collection_window_hours")
+                        else f"{item.published_at.month}月{item.published_at.day}日 {item.published_at:%H:%M}"
                     )
                 else:
                     day = item.published_at.strftime("%d").lstrip("0")
@@ -467,7 +479,11 @@ class DailySummarizer:
             for block in artifact.blocks:
                 if block.primary:
                     continue
-                block_title = _escape_markdown(block.title)
+                block_title = _escape_markdown({
+                    "background": "技术背景与工程挑战",
+                    "technical_breakthrough": "技术突破",
+                    "impact": "行业影响与客观评价",
+                }.get(block.id, block.title) if language == "zh" and self._profile_id(item).startswith("icar-") else block.title)
                 block_content = _escape_markdown(block.content)
                 if language == "zh":
                     block_title = _pangu(block_title)
@@ -491,7 +507,7 @@ class DailySummarizer:
             ]
 
         if analysis and analysis.tags:
-            tags_str = ", ".join([f"`#{_escape_markdown(t)}`" for t in analysis.tags])
+            tags_str = ", ".join([f"`#{_escape_markdown(t.lstrip('#'))}`" for t in analysis.tags])
             lines.append("")
             lines.append(f"**{labels['tags']}**: {tags_str}")
 

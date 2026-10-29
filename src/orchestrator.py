@@ -35,6 +35,7 @@ from .ai.summarizer import DailySummarizer
 from .ai.enricher import ContentEnricher, EnrichmentBatchResult
 from .ai.tokens import get_usage_snapshot
 from .processing import ProfileRegistry
+from .processing.diagnostics import selection_diagnostics
 
 
 _TRACKING_QUERY_PARAMETERS = {
@@ -102,6 +103,9 @@ class FilteringPipelineResult:
     topic_dedup_removed: int
     balanced_digest: BalancedDigestResult
     eligible_count: Optional[int] = None
+    threshold_ids: List[str] = field(default_factory=list)
+    topic_ids: List[str] = field(default_factory=list)
+    eligible_ids: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -261,6 +265,19 @@ class HorizonOrchestrator:
                 self.console.print("[yellow]No new content found. Exiting.[/yellow]")
                 return
 
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            run_report = {
+                "date": today,
+                "since": since.isoformat(),
+                "status": "fetched",
+                "model": self.config.ai.model,
+                "processing": self.config.processing.model_dump(mode="json"),
+                "digest": self.config.digest.model_dump(mode="json"),
+                "fetch": self.last_fetch_report.to_dict() if self.last_fetch_report else None,
+                "raw_items": [item.model_dump(mode="json") for item in all_items],
+            }
+            self.storage.save_pipeline_report(today, run_report)
+
             # 3. Merge cross-source duplicates (same URL from different sources)
             merged_items = self.merge_cross_source_duplicates(all_items)
             if len(merged_items) < len(all_items):
@@ -275,12 +292,33 @@ class HorizonOrchestrator:
             self.console.print(
                 f"{self.icons['ai']} Analyzed {len(analyzed_items)} items with AI\n"
             )
+            run_report["status"] = "scored"
+            run_report["scored_items"] = [item.model_dump(mode="json") for item in analyzed_items]
+            self.storage.save_pipeline_report(today, run_report)
 
             # 5. Filter, deduplicate, and balance the digest
             filtering_result = await self.select_digest_items(
                 analyzed_items,
             )
             important_items = filtering_result.items
+            run_report.update(selection_diagnostics(
+                analyzed_items,
+                self.config.processing,
+                filtering_result.threshold_ids,
+                filtering_result.topic_ids,
+                filtering_result.eligible_ids,
+                [item.id for item in important_items],
+            ))
+            run_report["status"] = "selected"
+            diagnostics_path = self.storage.save_pipeline_report(today, run_report)
+            for profile_id, counts in run_report["profiles"].items():
+                self.console.print(
+                    f"      {profile_id}: analyzed={counts['analyzed']}, "
+                    f"selected={counts.get('selected', 0)}, "
+                    f"below_threshold={counts.get('below_threshold', 0)}, "
+                    f"analysis_failed={counts.get('analysis_failed', 0)}"
+                )
+            self.console.print(f"   Selection diagnostics: {diagnostics_path}\n")
 
             # Show per-sub-source selection breakdown
             selected_counts: Dict[str, int] = defaultdict(int)
@@ -292,10 +330,16 @@ class HorizonOrchestrator:
             self.console.print("")
 
             # 6. Search related stories + enrich with background knowledge (2nd AI pass)
-            await self.enrich_items(important_items)
+            enrichment_result = await self.enrich_items(important_items)
+            run_report["enrichment"] = {
+                "succeeded": enrichment_result.succeeded_count,
+                "failures": enrichment_result.failures,
+            }
+            run_report["status"] = "enriched"
+            run_report["selected_items"] = [item.model_dump(mode="json") for item in important_items]
+            self.storage.save_pipeline_report(today, run_report)
 
             # 7. Generate and save daily summaries for each configured language
-            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
             for lang in self.config.ai.languages:
                 summarizer = DailySummarizer(
                     profile_names=self.profiles.names,
@@ -713,16 +757,22 @@ class HorizonOrchestrator:
         for group in duplicate_groups:
             if not isinstance(group, list) or len(group) < 2:
                 continue
-            primary_idx = group[0]
-            if primary_idx < 0 or primary_idx >= len(items):
+            valid_indices = sorted({index for index in group if type(index) is int and 0 <= index < len(items)})
+            if len(valid_indices) < 2 or any(index in drop_indices for index in valid_indices):
                 continue
+            primary_idx = valid_indices[0]
             primary = items[primary_idx]
-            for dup_idx in group[1:]:
-                if not isinstance(dup_idx, int) or dup_idx < 0 or dup_idx >= len(items):
-                    continue
-                if dup_idx == primary_idx:
-                    continue
+            for dup_idx in valid_indices[1:]:
                 dup = items[dup_idx]
+                # Distinct patent publications and papers are separate evidence,
+                # even when the model groups them under the same chassis topic.
+                identity_keys = ("publication_number", "patent_id", "doi", "arxiv_id")
+                if any(
+                    primary.metadata.get(key) and dup.metadata.get(key)
+                    and primary.metadata[key] != dup.metadata[key]
+                    for key in identity_keys
+                ):
+                    continue
                 # Merge comments/content from the duplicate into the primary
                 if dup.content:
                     if not primary.content or dup.content not in primary.content:
@@ -814,6 +864,9 @@ class HorizonOrchestrator:
             topic_dedup_count=len(deduped_items),
             topic_dedup_removed=topic_dedup_removed,
             balanced_digest=balanced_digest,
+            threshold_ids=[item.id for item in threshold_items],
+            topic_ids=[item.id for item in deduped_items],
+            eligible_ids=[item.id for item in deduped_items],
         )
 
     async def select_digest_items(
@@ -859,6 +912,9 @@ class HorizonOrchestrator:
             topic_dedup_removed=initial.topic_dedup_removed,
             balanced_digest=balanced,
             eligible_count=len(eligible),
+            threshold_ids=initial.threshold_ids,
+            topic_ids=initial.topic_ids,
+            eligible_ids=[item.id for item in eligible],
         )
 
     def passes_profile_filter(

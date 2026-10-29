@@ -27,7 +27,7 @@ def analysis_system_prompt(profile: LoadedProfile) -> str:
 Return valid JSON only:
 {{
   "score": <number from 0 to 10>,
-  "reason": "<concise explanation>",
+  "reason": "<state the relevant engineering topic, available evidence, limitations, and why this score is appropriate>",
   "summary": "<one-sentence summary>",
   "tags": ["<tag>", "..."]
 }}"""

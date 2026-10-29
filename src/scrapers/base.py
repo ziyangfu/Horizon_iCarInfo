@@ -1,7 +1,7 @@
 """Base scraper interface."""
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List
 import httpx
 
@@ -45,3 +45,9 @@ class BaseScraper(ABC):
             str: Unique ID in format {source}:{subtype}:{native_id}
         """
         return f"{source_type}:{subtype}:{native_id}"
+
+    @staticmethod
+    def _effective_since(since: datetime, lookback_hours: int | None) -> datetime:
+        if lookback_hours is None:
+            return since
+        return min(since, datetime.now(timezone.utc) - timedelta(hours=lookback_hours))

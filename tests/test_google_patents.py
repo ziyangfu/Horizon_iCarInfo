@@ -150,7 +150,13 @@ def test_google_patents_index_fallback_only_accepts_patent_urls() -> None:
         mock_ddgs.text.return_value = mock_ddgs_results
         mock_ddgs_cls.return_value = mock_ddgs
 
-        items = asyncio.run(scraper.fetch(_now() - timedelta(days=1)))
+        with patch.object(scraper, "_fetch_patent_details", new=AsyncMock(return_value={
+            "publication_date": _now().strftime("%Y-%m-%d"),
+            "assignee": "伯特利",
+            "filing_date": "2026-01-01",
+            "abstract": "本发明公开了一种电子机械制动系统。",
+        })):
+            items = asyncio.run(scraper.fetch(_now() - timedelta(days=1)))
 
         # Only the 1 genuine Google Patents result must be extracted
         assert len(items) == 1
@@ -158,6 +164,71 @@ def test_google_patents_index_fallback_only_accepts_patent_urls() -> None:
         assert items[0].source_type == SourceType.PATENTS
         assert items[0].title == "[专利] 一种电子机械制动EMB系统及控制方法"
         assert str(items[0].url) == "https://patents.google.com/patent/CN115107722B/zh"
+        assert items[0].metadata["publication_date"] == _now().strftime("%Y-%m-%d")
+        assert items[0].author == "伯特利"
+
+
+@pytest.mark.parametrize("date", [None, "not-a-date", "2026-02-30"])
+def test_xhr_rejects_unverifiable_publication_dates(date) -> None:
+    client = _mock_client(_sample_cluster_response([{
+        "publication_number": "CN119734755A", "title": "线控转向", "publication_date": date,
+    }]))
+    scraper = GooglePatentsScraper(PatentQueryConfig(), client)
+    with patch.object(scraper, "_fetch_patent_details", new=AsyncMock(return_value=None)):
+        items = asyncio.run(scraper._fetch_from_google_patents(_now() - timedelta(days=1)))
+    assert items == []
+
+
+@pytest.mark.parametrize("date", ["2014-02-19", "2025-04-01", "2099-01-01"])
+def test_index_rejects_old_and_future_publications(date) -> None:
+    scraper = GooglePatentsScraper(PatentQueryConfig(), _mock_client({}))
+    with patch("ddgs.DDGS") as search, patch.object(scraper, "_fetch_patent_details", new=AsyncMock(return_value={
+        "publication_date": date, "assignee": "申请人", "filing_date": "", "abstract": "线控转向",
+    })):
+        search.return_value.text.return_value = [{"href": "https://patents.google.com/patent/CN119734755A/zh", "title": "线控转向"}]
+        items = asyncio.run(scraper._fetch_from_google_patents_index(_now() - timedelta(days=7)))
+    assert items == []
+
+
+@pytest.mark.parametrize("url", [
+    "https://evil.example/patents.google.com/patent/CN119734755A",
+    "https://patents.google.com.evil.example/patent/CN119734755A",
+    "https://patents.google.com/patent/CN119734755A/zh",
+])
+def test_index_does_not_accept_search_snippets_as_date_evidence(url) -> None:
+    scraper = GooglePatentsScraper(PatentQueryConfig(), _mock_client({}))
+    with patch("ddgs.DDGS") as search, patch.object(scraper, "_fetch_patent_details", new=AsyncMock(return_value=None)) as details:
+        search.return_value.text.return_value = [{"href": url, "title": "线控转向", "body": "Published today"}]
+        items = asyncio.run(scraper._fetch_from_google_patents_index(_now() - timedelta(days=1)))
+    assert items == []
+    if "evil.example" in url:
+        details.assert_not_awaited()
+
+
+def test_patent_page_extracts_official_date_and_applicant() -> None:
+    import httpx
+    response = httpx.Response(200, text='''
+        <meta name="citation_patent_number" content="CN119734755A">
+        <meta name="DC.date" content="2025-01-20" scheme="dateSubmitted">
+        <time itemprop="publicationDate" datetime="2025-04-01">2025年4月1日</time>
+        <dd itemprop="assigneeOriginal">吉利汽车研究院</dd>
+        <div itemprop="abstract">本申请提供线控转向系统的摩擦补偿方法。</div>
+    ''', request=httpx.Request("GET", "https://patents.google.com/patent/CN119734755A/zh"))
+    scraper = GooglePatentsScraper(PatentQueryConfig(), AsyncMock(get=AsyncMock(return_value=response)))
+    details = asyncio.run(scraper._fetch_patent_details("CN119734755A"))
+    assert details["publication_date"] == "2025-04-01"
+    assert details["assignee"] == "吉利汽车研究院"
+    assert "摩擦补偿" in details["abstract"]
+
+
+def test_xhr_accepts_compact_publication_date() -> None:
+    client = _mock_client(_sample_cluster_response([{
+        "publication_number": "CN119734755A", "title": "线控转向", "publication_date": _now().strftime("%Y%m%d"),
+    }]))
+    scraper = GooglePatentsScraper(PatentQueryConfig(), client)
+    items = asyncio.run(scraper._fetch_from_google_patents(_now() - timedelta(hours=1)))
+    assert len(items) == 1
+    assert items[0].metadata["publication_date"] == _now().strftime("%Y-%m-%d")
 
 
 def test_classifier_strictly_isolates_icar_patents() -> None:

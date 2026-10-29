@@ -185,6 +185,7 @@ class ContentAnalyzer:
             return
 
         if item.processing:
+            result.tags = list(dict.fromkeys(tag.strip().lstrip("#").strip() for tag in result.tags if tag.strip().lstrip("#").strip()))
             item.processing.analysis = result
 
     @classmethod

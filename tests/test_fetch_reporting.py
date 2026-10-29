@@ -47,6 +47,9 @@ def make_sources(**overrides):  # type: ignore[no-untyped-def]
         "ossinsight": SimpleNamespace(enabled=False),
         "gdelt": None,
         "google_news": None,
+        "arxiv": [],
+        "patents": [],
+        "crossref": [],
     }
     values.update(overrides)
     return SimpleNamespace(**values)

@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from .._file_utils import _atomic_write_text
 from ..models import Config
+from ..processing.diagnostics import render_selection_report
 
 
 # Matches ${VAR_NAME} in string config values. Names follow env-var rules
@@ -140,6 +141,15 @@ class StorageManager:
                 return json.load(f)
         except json.JSONDecodeError:
             return []
+
+    def save_pipeline_report(self, date: str, report: dict[str, Any]) -> Path:
+        directory = self.data_dir / "diagnostics"
+        directory.mkdir(parents=True, exist_ok=True)
+        path = safe_output_path(directory, f"horizon-{date}.json")
+        _atomic_write_text(path, json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+        markdown_path = safe_output_path(directory, f"horizon-{date}.md")
+        _atomic_write_text(markdown_path, render_selection_report(report))
+        return path
 
     def add_subscriber(self, email_addr: str):
         """Adds a new subscriber email."""

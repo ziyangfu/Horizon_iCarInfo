@@ -65,6 +65,24 @@ def test_short_window_uses_when_operator() -> None:
     assert q.startswith("ai ")
 
 
+def test_multiple_queries_share_cap_without_losing_topic_diversity() -> None:
+    from email.utils import format_datetime
+    published = format_datetime(_now() - timedelta(hours=1))
+    first = _feed(_item("Steering", "https://example.com/shared", pub=published) + _item("Steering two", "https://example.com/steering", pub=published))
+    second = _feed(_item("Braking", "https://example.com/braking", pub=published) + _item("Same steering", "https://example.com/shared", pub=published))
+    client = _mock_client("")
+    responses = []
+    for text in (first, second):
+        response = MagicMock()
+        response.text = text
+        responses.append(response)
+    client.get.side_effect = responses
+    config = GoogleNewsConfig(enabled=True, queries=["steering", "braking"], max_results=2)
+    items = asyncio.run(GoogleNewsScraper(config, client).fetch(_now() - timedelta(days=1)))
+    assert [entry.title for entry in items] == ["Steering", "Braking"]
+    assert [entry.metadata["gn_query"] for entry in items] == ["steering", "braking"]
+
+
 def test_long_window_uses_after_operator() -> None:
     client = _mock_client(_feed(_item("Foo - Publisher", "https://example.com/a")))
     config = GoogleNewsConfig(enabled=True, query="ai")

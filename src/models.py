@@ -434,6 +434,8 @@ class GoogleNewsConfig(BaseModel):
 
     enabled: bool = False
     query: str = "artificial intelligence"
+    queries: List[str] = Field(default_factory=list)
+    lookback_hours: Optional[int] = Field(default=None, gt=0)
     language: str = "en"  # hl
     country: str = "US"  # gl
     ceid: Optional[str] = None  # when None scraper derives it as "{country}:{language}"
@@ -451,6 +453,7 @@ class ArXivConfig(BaseModel):
     )
     keywords: List[str] = Field(default_factory=list)
     max_results: int = 30
+    lookback_hours: Optional[int] = Field(default=None, gt=0)
     category: Optional[str] = "academic-paper"
     profile: ProfileRoute = None
 
@@ -463,6 +466,7 @@ class PatentQueryConfig(BaseModel):
     assignees: List[str] = Field(default_factory=list)
     countries: List[str] = Field(default_factory=list)
     max_results: int = 20
+    lookback_hours: Optional[int] = Field(default=None, gt=0)
     category: Optional[str] = "chassis-patent"
     profile: ProfileRoute = None
 
@@ -475,6 +479,7 @@ class CrossrefJournalConfig(BaseModel):
     journal_name: Optional[str] = "MDPI Vehicles"
     keywords: List[str] = Field(default_factory=list)
     max_results: int = 15
+    lookback_hours: Optional[int] = Field(default=None, gt=0)
     category: Optional[str] = "mdpi-paper"
     profile: ProfileRoute = "icar-papers"
     mailto: Optional[str] = None

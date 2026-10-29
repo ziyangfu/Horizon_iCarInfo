@@ -26,12 +26,14 @@ Design notes:
 
 from __future__ import annotations
 
+import asyncio
 import calendar
 import hashlib
 import logging
 import math
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from itertools import zip_longest
 from typing import Any, List, Optional
 
 import feedparser
@@ -72,7 +74,19 @@ class GoogleNewsScraper(BaseScraper):
         if not self.gn_config.enabled:
             return []
 
-        base_query = (self.gn_config.query or "").strip()
+        since = self._effective_since(since, self.gn_config.lookback_hours)
+        queries = self.gn_config.queries or [self.gn_config.query]
+        batches = await asyncio.gather(*(self._fetch_query(query, since) for query in queries))
+        unique = {}
+        for batch_items in zip_longest(*batches):
+            for item in batch_items:
+                if item is not None:
+                    unique.setdefault(item.id, item)
+        return list(unique.values())[:self.gn_config.max_results]
+
+    async def _fetch_query(self, base_query: str, since: datetime) -> List[ContentItem]:
+        base_query = base_query.strip()
+
         if not base_query:
             return []
 
@@ -99,7 +113,9 @@ class GoogleNewsScraper(BaseScraper):
                 if len(items) >= self.gn_config.max_results:
                     break
                 item = self._entry_to_item(entry)
-                if item is not None:
+                if item is not None and self._ensure_utc(since) <= self._ensure_utc(item.published_at) <= datetime.now(timezone.utc):
+                    item.metadata["gn_query"] = base_query
+                    item.metadata["collection_window_hours"] = self.gn_config.lookback_hours
                     items.append(item)
             return items
 

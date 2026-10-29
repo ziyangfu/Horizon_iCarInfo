@@ -5,7 +5,7 @@
     "api_key_env": "OLLAMA_API_KEY",
     "base_url": "http://192.168.1.10:11434/v1",
     "temperature": 0.2,
-    "max_tokens": 256000,
+    "max_tokens": 8192,
     "languages": [
       "zh"
     ]
@@ -26,6 +26,12 @@
     "unsubscribe_keyword": "UNSUBSCRIBE"
   },
   "sources": {
+    "hackernews": {
+      "enabled": false
+    },
+    "telegram": {
+      "enabled": false
+    },
     "arxiv": [
       {
         "enabled": true,
@@ -46,7 +52,8 @@
           "active suspension",
           "vehicle dynamics"
         ],
-        "max_results": 25,
+        "max_results": 40,
+        "lookback_hours": 168,
         "category": "arxiv-paper",
         "profile": "icar-papers"
       }
@@ -114,6 +121,7 @@
           "小米汽车"
         ],
         "max_results": 20,
+        "lookback_hours": 168,
         "category": "chassis-patent",
         "profile": "icar-patents"
       }
@@ -170,49 +178,56 @@
         "url": "https://www.greencarcongress.com/atom.xml",
         "enabled": true,
         "category": "ev-chassis-news",
-        "profile": "icar-info"
+        "profile": "icar-info",
+        "content_extractor": "trafilatura"
       },
       {
         "name": "SAE Industry News",
         "url": "https://www.sae.org/news/rss",
         "enabled": true,
         "category": "sae-standards",
-        "profile": "icar-info"
+        "profile": "icar-info",
+        "content_extractor": "trafilatura"
       },
       {
         "name": "盖世汽车 - 智能网联",
         "url": "https://auto.gasgoo.com/Rss/ClassRss.aspx?ClassId=601",
         "enabled": true,
         "category": "gasgoo-smart-connected",
-        "profile": "icar-info"
+        "profile": "icar-info",
+        "content_extractor": "trafilatura"
       },
       {
         "name": "盖世汽车 - 新技术",
         "url": "https://auto.gasgoo.com/Rss/ClassRss.aspx?ClassId=409",
         "enabled": true,
         "category": "gasgoo-new-tech",
-        "profile": "icar-info"
+        "profile": "icar-info",
+        "content_extractor": "trafilatura"
       },
       {
         "name": "盖世汽车 - 供应链",
         "url": "https://auto.gasgoo.com/Rss/ClassRss.aspx?ClassId=103",
         "enabled": true,
         "category": "gasgoo-supply-chain",
-        "profile": "icar-info"
+        "profile": "icar-info",
+        "content_extractor": "trafilatura"
       },
       {
         "name": "盖世汽车 - 新能源",
         "url": "https://auto.gasgoo.com/Rss/ClassRss.aspx?ClassId=501",
         "enabled": true,
         "category": "gasgoo-nev",
-        "profile": "icar-info"
+        "profile": "icar-info",
+        "content_extractor": "trafilatura"
       },
       {
         "name": "盖世汽车 - 盖世原创",
         "url": "https://auto.gasgoo.com/Rss/ClassRss.aspx?ClassId=-1",
         "enabled": true,
         "category": "gasgoo-original",
-        "profile": "icar-info"
+        "profile": "icar-info",
+        "content_extractor": "trafilatura"
       }
     ],
     "google_news": {
@@ -220,7 +235,14 @@
       "query": "线控底盘 OR 线控转向 OR 线控制动 OR 智能底盘 OR 整车运动控制 OR 底盘域控 OR 伯特利 线控 OR 同驭科技 OR 拿森科技 OR 博世底盘 OR 采埃孚底盘 OR 大陆制动",
       "language": "zh-CN",
       "country": "CN",
-      "max_results": 30,
+      "queries": [
+        "线控底盘 OR 线控转向 OR 线控制动 OR 整车运动控制 OR 底盘域控",
+        "主动悬架 OR 空气悬架 OR 电控减振 OR 后轮转向 OR 扭矩矢量 OR 轮胎 附着 估计",
+        "博世 底盘 OR 采埃孚 底盘 OR 伯特利 制动 OR 同驭 OR 拿森 OR 耐世特 转向",
+        "\"steer-by-wire\" OR \"brake-by-wire\" OR \"vehicle motion control\" OR \"active suspension\""
+      ],
+      "max_results": 80,
+      "lookback_hours": 72,
       "category": "google-news-zh",
       "profile": "icar-info"
     },
@@ -229,7 +251,8 @@
         "enabled": true,
         "issn": "2624-8921",
         "journal_name": "MDPI Vehicles",
-        "max_results": 10,
+        "max_results": 30,
+        "lookback_hours": 168,
         "category": "mdpi-paper",
         "profile": "icar-papers"
       },
@@ -237,7 +260,8 @@
         "enabled": true,
         "issn": "2379-8858",
         "journal_name": "IEEE Transactions on Intelligent Vehicles",
-        "max_results": 10,
+        "max_results": 30,
+        "lookback_hours": 168,
         "category": "academic-paper",
         "profile": "icar-papers"
       },
@@ -245,7 +269,8 @@
         "enabled": true,
         "issn": "0042-3114",
         "journal_name": "Vehicle System Dynamics",
-        "max_results": 10,
+        "max_results": 30,
+        "lookback_hours": 168,
         "category": "academic-paper",
         "profile": "icar-papers"
       },
@@ -253,7 +278,8 @@
         "enabled": true,
         "issn": "0018-9545",
         "journal_name": "IEEE Transactions on Vehicular Technology",
-        "max_results": 10,
+        "max_results": 30,
+        "lookback_hours": 168,
         "category": "academic-paper",
         "profile": "icar-papers"
       },
@@ -261,7 +287,8 @@
         "enabled": true,
         "issn": "2574-0741",
         "journal_name": "SAE Int. J. of Connected and Automated Vehicles",
-        "max_results": 10,
+        "max_results": 30,
+        "lookback_hours": 168,
         "category": "academic-paper",
         "profile": "icar-papers"
       }
@@ -271,7 +298,7 @@
     "time_window_hours": 24
   },
   "digest": {
-    "max_items": null,
+    "max_items": 20,
     "profile_order": [
       "icar-info",
       "icar-papers",
@@ -280,7 +307,7 @@
     "category_groups": {
       "papers": {
         "name": "前沿论文",
-        "limit": 3,
+        "limit": 5,
         "categories": [
           "arxiv-paper",
           "mdpi-paper",
@@ -296,7 +323,7 @@
       }
     },
     "default_group": "other",
-    "default_group_limit": null
+    "default_group_limit": 12
   },
   "processing": {
     "profiles_dir": "profiles",

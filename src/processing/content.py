@@ -1,7 +1,10 @@
 """Select bounded source content for profile-driven AI stages."""
 
 from dataclasses import dataclass
+import re
 from typing import Literal
+
+from bs4 import BeautifulSoup
 
 
 COMMENTS_MARKER = "--- Top Comments ---"
@@ -30,6 +33,11 @@ def select_content(
 ) -> str:
     """Return a bounded excerpt while preserving a long article's conclusion."""
     text = content.strip()
+    if re.search(r"</?(?:a|p|div|ul|li|br|span|article)\b", text, re.IGNORECASE):
+        soup = BeautifulSoup(text, "html.parser")
+        for element in soup(["script", "style"]):
+            element.decompose()
+        text = soup.get_text(" ", strip=True)
     if len(text) <= max_chars:
         return text
     if sampling == "prefix":

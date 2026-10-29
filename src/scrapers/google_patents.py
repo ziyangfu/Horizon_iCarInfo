@@ -1,5 +1,6 @@
 """Google Patents scraper implementation for genuine patent documents only."""
 
+import asyncio
 import html
 import logging
 import re
@@ -8,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set
 
 import httpx
+from bs4 import BeautifulSoup
 
 from .base import BaseScraper
 from ..models import ContentItem, PatentQueryConfig, SourceType
@@ -53,7 +55,56 @@ class GooglePatentsScraper(BaseScraper):
         clean = num.strip().replace("-", "").replace("/", "")
         return bool(PATENT_PUB_NUM_REGEX.match(clean))
 
-    def _build_google_patents_query(self) -> str:
+    @staticmethod
+    def _publication_date(value: Optional[str]) -> Optional[datetime]:
+        if not isinstance(value, str):
+            return None
+        value = value.strip()
+        for date_format in ("%Y-%m-%d", "%Y%m%d"):
+            try:
+                return datetime.strptime(value, date_format).replace(tzinfo=timezone.utc)
+            except ValueError:
+                continue
+        return None
+
+    @staticmethod
+    def _within_window(published: datetime, since: datetime) -> bool:
+        # Patent offices provide calendar dates, not publication timestamps.
+        return since.astimezone(timezone.utc).date() <= published.date() <= datetime.now(timezone.utc).date()
+
+    async def _fetch_patent_details(self, pub_num: str) -> Optional[dict]:
+        url = f"https://patents.google.com/patent/{pub_num}/zh"
+        try:
+            response = await self.client.get(url, follow_redirects=True, timeout=15.0)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            def field(selector: str) -> str:
+                element = soup.select_one(selector)
+                if element is None:
+                    return ""
+                return str(element.get("content") or element.get("datetime") or element.get_text(" ", strip=True)).strip()
+
+            number = field('meta[name="citation_patent_number"], [itemprop="publicationNumber"]')
+            if re.sub(r"[^A-Z0-9]", "", number.upper()) != pub_num:
+                logger.warning("Patent page publication number mismatch for %s: %s", pub_num, number)
+                return None
+            published = self._publication_date(field('meta[name="citation_publication_date"], [itemprop="publicationDate"]'))
+            if published is None:
+                logger.warning("No verified publication date on patent page %s", pub_num)
+                return None
+            assignees = list(dict.fromkeys(element.get_text(" ", strip=True) for element in soup.select('[itemprop="assigneeOriginal"][repeat]') if element.get_text(strip=True)))
+            return {
+                "publication_date": published.strftime("%Y-%m-%d"),
+                "assignee": "; ".join(assignees) or field('[itemprop="assigneeOriginal"], [itemprop="assigneeCurrent"]') or "未知申请人",
+                "filing_date": field('[itemprop="filingDate"]'),
+                "abstract": field('[itemprop="abstract"], meta[name="DC.description"]'),
+            }
+        except Exception as exc:
+            logger.warning("Could not verify patent publication %s: %s", pub_num, exc)
+            return None
+
+    def _build_google_patents_query(self, since: Optional[datetime] = None) -> str:
         """Build single-encoded query string for Google Patents XHR."""
         parts = []
         keywords = self.patent_config.keywords
@@ -68,12 +119,19 @@ class GooglePatentsScraper(BaseScraper):
             parts.append(f"({as_or})")
 
         query_str = " ".join(parts) if parts else "chassis"
-        return f"q={query_str}&sort=new&num={self.patent_config.max_results}"
+        params = {"q": query_str, "sort": "new", "num": self.patent_config.max_results}
+        if since is not None:
+            params["after"] = f"publication:{since:%Y%m%d}"
+        if self.patent_config.countries:
+            params["country"] = ",".join(self.patent_config.countries)
+        return urllib.parse.urlencode(params)
 
     async def fetch(self, since: datetime) -> List[ContentItem]:
         """Fetch authentic patent items published since the given time."""
         if not self.patent_config.enabled:
             return []
+
+        since = self._effective_since(since, self.patent_config.lookback_hours)
 
         # Attempt 1: Google Patents XHR query
         try:
@@ -99,7 +157,7 @@ class GooglePatentsScraper(BaseScraper):
 
     async def _fetch_from_google_patents(self, since: datetime) -> List[ContentItem]:
         """Fetch patents directly from Google Patents XHR endpoint."""
-        inner_query = self._build_google_patents_query()
+        inner_query = self._build_google_patents_query(since)
         xhr_url = f"{self.GOOGLE_PATENTS_XHR_URL}?url={urllib.parse.quote(inner_query)}"
 
         headers = {
@@ -133,6 +191,7 @@ class GooglePatentsScraper(BaseScraper):
             pub_num = patent.get("publication_number")
             if not self._is_valid_patent_num(pub_num):
                 continue
+            pub_num = re.sub(r"[\s/-]", "", pub_num)
 
             raw_title = patent.get("title", "Untitled Patent")
             title = self._clean_text(raw_title)
@@ -146,16 +205,16 @@ class GooglePatentsScraper(BaseScraper):
             pub_date_str = patent.get("publication_date")
             filing_date_str = patent.get("filing_date")
 
-            pub_dt = datetime.now(timezone.utc)
-            if pub_date_str:
-                try:
-                    pub_dt = datetime.strptime(pub_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-                except ValueError:
-                    pass
-
-            # Filter by since date if publication date is available
-            if pub_date_str and pub_dt < since:
+            pub_dt = self._publication_date(pub_date_str)
+            if pub_dt is None:
+                details = await self._fetch_patent_details(pub_num)
+                if details is None:
+                    continue
+                pub_date_str = details["publication_date"]
+                pub_dt = self._publication_date(pub_date_str)
+            if pub_dt is None or not self._within_window(pub_dt, since):
                 continue
+            pub_date_str = pub_dt.strftime("%Y-%m-%d")
 
             patent_url = f"https://patents.google.com/patent/{pub_num}/zh"
 
@@ -190,6 +249,8 @@ class GooglePatentsScraper(BaseScraper):
                         "inventor": inventor,
                         "filing_date": filing_date_str,
                         "publication_date": pub_date_str,
+                        "publication_date_source": "google_patents",
+                        "collection_window_hours": self.patent_config.lookback_hours,
                         "category": category_tag,
                     },
                     profile=profile_route,
@@ -229,14 +290,17 @@ class GooglePatentsScraper(BaseScraper):
         ddgs = DDGS()
         for query in search_queries:
             try:
-                results = list(ddgs.text(query, max_results=self.patent_config.max_results))
+                results = await asyncio.to_thread(lambda: list(ddgs.text(query, max_results=self.patent_config.max_results)))
             except Exception as e:
                 logger.warning("Search query failed for '%s': %s", query, e)
                 continue
 
             for r in results:
                 url = r.get("href", "")
-                m = re.search(r"patents\.google\.com/patent/([A-Z]{2}[0-9A-Z]+)", url)
+                parsed_url = urllib.parse.urlsplit(url)
+                if parsed_url.scheme not in {"http", "https"} or parsed_url.hostname != "patents.google.com":
+                    continue
+                m = re.fullmatch(r"/patent/([A-Z]{2}[0-9A-Z]+)(?:/[a-zA-Z-]+)?/?", parsed_url.path)
                 if not m:
                     continue
 
@@ -257,23 +321,20 @@ class GooglePatentsScraper(BaseScraper):
 
                 snippet = self._clean_text(r.get("body", ""))
 
-                # Deduce assignee from matching keywords in snippet/title or assignees list
-                matched_assignee = "未知申请人"
-                assignee_match = re.search(r"(?:申请人|专利权人)[：:]\s*([^\s,，。；;]+)", snippet)
-                if assignee_match:
-                    matched_assignee = assignee_match.group(1).strip()
-                else:
-                    for a in assignees:
-                        if a in snippet or a in clean_title:
-                            matched_assignee = a
-                            break
-
-                pub_dt = datetime.now(timezone.utc)
+                details = await self._fetch_patent_details(pub_num)
+                if details is None:
+                    continue
+                pub_dt = self._publication_date(details["publication_date"])
+                if pub_dt is None or not self._within_window(pub_dt, since):
+                    continue
+                matched_assignee = details["assignee"]
+                snippet = details["abstract"] or snippet
                 patent_url = f"https://patents.google.com/patent/{pub_num}/zh"
 
                 content_parts = [
                     f"专利号: {pub_num}",
                     f"申请人 / 专利权人: {matched_assignee}",
+                    f"公开日: {details['publication_date']}",
                 ]
                 if snippet:
                     content_parts.append(f"\n摘要与方案简述:\n{snippet}")
@@ -293,6 +354,10 @@ class GooglePatentsScraper(BaseScraper):
                             "patent_id": pub_num,
                             "publication_number": pub_num,
                             "assignee": matched_assignee,
+                            "publication_date": details["publication_date"],
+                            "publication_date_source": "google_patents_page",
+                            "filing_date": details["filing_date"],
+                            "collection_window_hours": self.patent_config.lookback_hours,
                             "category": category_tag,
                             "summary": snippet,
                         },
