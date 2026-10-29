@@ -198,6 +198,13 @@ docker compose -f docker-compose.scheduler.yml build
 `config --quiet` 只验证 Compose 配置，不验证 Horizon JSON、模型连接或邮件密码。
 首次构建会下载 Python 镜像、项目依赖和调度器，可能耗时较长。
 
+如果因为国内访问docker.io超时的问题，可以先把镜像pull下来，使用国内的镜像站。
+
+```bash
+docker pull docker.m.daocloud.io/library/python:3.11-slim
+docker tag docker.m.daocloud.io/library/python:3.11-slim python:3.11-slim
+```
+
 ### 3.2 检查定时规则
 
 ```bash
