@@ -604,6 +604,24 @@ class ProfileSettingsConfig(BaseModel):
     topic_dedup: bool = True
 
 
+class NewsRecoveryConfig(BaseModel):
+    """One bounded recovery round for an empty chassis-news section."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    max_reanalysis_items: int = Field(default=5, ge=0, le=20)
+    max_new_items: int = Field(default=20, ge=1, le=100)
+    queries: List[str] = Field(default_factory=list, max_length=8)
+
+    @field_validator("queries")
+    @classmethod
+    def validate_queries(cls, value: List[str]) -> List[str]:
+        if any(not query.strip() or len(query) > 500 for query in value):
+            raise ValueError("recovery queries must contain 1 to 500 non-blank characters")
+        return list(dict.fromkeys(query.strip() for query in value))
+
+
 class ProcessingConfig(BaseModel):
     """Profile discovery and fallback settings."""
 
@@ -612,6 +630,7 @@ class ProcessingConfig(BaseModel):
     profiles_dir: str = "profiles"
     default_profile: str = "tech-news"
     profile_settings: Dict[str, ProfileSettingsConfig] = Field(default_factory=dict)
+    news_recovery: NewsRecoveryConfig = Field(default_factory=NewsRecoveryConfig)
 
 
 class DisplayConfig(BaseModel):

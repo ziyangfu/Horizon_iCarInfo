@@ -113,6 +113,13 @@ automatic matching cannot select a profile:
 - `profile_settings`: User preferences keyed by profile ID. `threshold` accepts
   `0` through `10` or `null` for no score filter; `topic_dedup` defaults to
   `true`. Unknown profile IDs are rejected when Horizon starts.
+- `news_recovery`: Optional single recovery round for an empty `icar-info`
+  section in the scheduled/CLI pipeline. Defaults to disabled. When enabled,
+  it retries failed news sources, reviews up to `max_reanalysis_items` candidates
+  (default 5), and uses `queries` for supplemental Google News searches with a
+  shared `max_new_items` budget (default 20). It retains the configured score
+  threshold and collection window. See [Digest quality](digest-quality.md)
+  for configuration, diagnostics, and limits.
 
 Each profile owns its matching, analysis, and enrichment behavior. Runtime
 filtering preferences stay in the main JSON configuration. See [Processing

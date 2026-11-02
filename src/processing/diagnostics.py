@@ -84,6 +84,24 @@ def render_selection_report(report: dict[str, Any]) -> str:
 
     for decision in report.get("decisions", []):
         lines.append(f"| {cell(decision['title'])} | {cell(decision['source'])}／{cell(decision['profile'])} | {decision['score']}／{decision['threshold']} | {labels[decision['decision']]} | {cell(decision['reason'])} |")
+    recovery = report.get("news_recovery")
+    if recovery:
+        lines.extend(["", "## 资讯空板块兜底", "", f"状态：{cell(recovery['status'])}；执行轮数：{recovery['rounds']}。"])
+        if recovery.get("triggered"):
+            lines.extend([
+                f"入选阈值保持 {recovery['threshold']}；新增候选 {recovery['new_items']} 条；最终资讯入选 {recovery['selected']} 条。",
+                f"排除重复 {recovery['duplicates']} 条；排除窗口外或未来内容 {recovery['outside_window']} 条。",
+                "首轮逐条决策及复评分数保存在同名 JSON 的 news_recovery 中。",
+                "",
+                "| 复评条目 | 原分数 | 新分数 | 补充正文 | 状态 |",
+                "|---|---:|---:|---|---|",
+            ])
+            for entry in recovery["reanalysis"]:
+                lines.append(f"| {cell(entry['id'])} | {entry['original_score']} | {entry.get('score', '—')} | {'是' if entry['content_extended'] else '否'} | {cell(entry['status'])} |")
+            for fetch in recovery["fetches"]:
+                lines.append(f"- {cell(fetch['stage'])}：{cell(fetch['status'])}，采集 {fetch['item_count']} 条。")
+            for error in recovery["errors"]:
+                lines.append(f"- 兜底异常：{cell(error)}")
     if report.get("enrichment"):
         enrichment = report["enrichment"]
         lines.extend(["", f"深度解读成功：{enrichment['succeeded']}；失败：{len(enrichment['failures'])}。"])

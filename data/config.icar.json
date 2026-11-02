@@ -329,6 +329,17 @@
   "processing": {
     "profiles_dir": "profiles",
     "default_profile": "icar-info",
+    "news_recovery": {
+      "enabled": true,
+      "max_reanalysis_items": 5,
+      "max_new_items": 20,
+      "queries": [
+        "\"线控转向\" OR \"steer-by-wire\"",
+        "\"线控制动\" OR \"电子机械制动\" OR \"brake-by-wire\"",
+        "\"主动悬架\" OR \"后轮转向\" OR \"扭矩矢量\"",
+        "\"整车运动控制\" OR \"vehicle motion control\" OR \"底盘域控\""
+      ]
+    },
     "profile_settings": {
       "icar-info": {
         "threshold": 4.0,

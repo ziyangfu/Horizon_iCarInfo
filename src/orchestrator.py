@@ -11,7 +11,7 @@ import httpx
 from rich.console import Console
 
 from .console_icons import get_icons
-from .models import Config, ContentItem
+from .models import Config, ContentItem, SourcesConfig
 from .storage.manager import StorageManager, safe_output_path
 from .services.email import EmailManager
 from .services.webhook import WebhookNotifier
@@ -203,6 +203,8 @@ class HorizonOrchestrator:
         )
         for profile_id in config.processing.profile_settings:
             self.profiles.get(profile_id)
+        if config.processing.news_recovery.enabled:
+            self.profiles.get("icar-info")
         if config.digest.profile_order:
             configured_profiles = set(config.digest.profile_order)
             unknown_profiles = configured_profiles - self.profiles.ids
@@ -258,10 +260,11 @@ class HorizonOrchestrator:
                 f"{self.icons['fetched']} Fetched {len(all_items)} items from all sources\n"
             )
 
-            if self.last_fetch_report and self.last_fetch_report.all_failed:
+            recovery_enabled = self._news_recovery_enabled()
+            if self.last_fetch_report and self.last_fetch_report.all_failed and not recovery_enabled:
                 raise RuntimeError(self.last_fetch_report.failure_message())
 
-            if not all_items:
+            if not all_items and not recovery_enabled:
                 self.console.print("[yellow]No new content found. Exiting.[/yellow]")
                 return
 
@@ -288,7 +291,7 @@ class HorizonOrchestrator:
                 )
 
             # 4. Analyze with AI
-            analyzed_items = await self.analyze_items(merged_items)
+            analyzed_items = await self.analyze_items(merged_items) if merged_items else []
             self.console.print(
                 f"{self.icons['ai']} Analyzed {len(analyzed_items)} items with AI\n"
             )
@@ -300,6 +303,19 @@ class HorizonOrchestrator:
             filtering_result = await self.select_digest_items(
                 analyzed_items,
             )
+            if recovery_enabled:
+                from .processing.news_recovery import NewsRecovery
+
+                recovery = NewsRecovery(self, since)
+                all_items, analyzed_items, filtering_result = await recovery.run(
+                    all_items, analyzed_items, filtering_result,
+                )
+                run_report["news_recovery"] = recovery.report
+                run_report["raw_items"] = [item.model_dump(mode="json") for item in all_items]
+                run_report["scored_items"] = [item.model_dump(mode="json") for item in analyzed_items]
+                if not all_items and self.last_fetch_report and self.last_fetch_report.all_failed and not recovery.fetch_succeeded:
+                    self.storage.save_pipeline_report(today, run_report)
+                    raise RuntimeError(self.last_fetch_report.failure_message())
             important_items = filtering_result.items
             run_report.update(selection_diagnostics(
                 analyzed_items,
@@ -456,17 +472,31 @@ class HorizonOrchestrator:
             since = datetime.now(timezone.utc) - timedelta(hours=hours)
         return since
 
-    async def fetch_all_sources(self, since: datetime) -> List[ContentItem]:
+    def _news_recovery_enabled(self) -> bool:
+        processing = getattr(self.config, "processing", None)
+        recovery = getattr(processing, "news_recovery", None)
+        return bool(recovery and recovery.enabled)
+
+    async def fetch_all_sources(
+        self,
+        since: datetime,
+        *,
+        sources: Optional[SourcesConfig] = None,
+        source_names: Optional[set[str]] = None,
+    ) -> List[ContentItem]:
         """Fetch content from all configured sources.
 
         This is a stable stage entry point for integrations such as MCP.
 
         Args:
             since: Fetch items published after this time
+            sources: Optional source subset, without changing the run configuration
+            source_names: Optional allowlist of named fetch jobs
 
         Returns:
             List[ContentItem]: All fetched items
         """
+        sources = sources if sources is not None else self.config.sources
         default_headers = {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -480,90 +510,94 @@ class HorizonOrchestrator:
             tasks = []
 
             # GitHub sources
-            if self.config.sources.github:
-                github_scraper = GitHubScraper(self.config.sources.github, client)
-                tasks.append(self._fetch_with_progress("GitHub", github_scraper, since))
+            if sources.github:
+                github_scraper = GitHubScraper(sources.github, client)
+                tasks.append(("GitHub", github_scraper))
 
             # Hacker News
-            if self.config.sources.hackernews.enabled:
-                hn_scraper = HackerNewsScraper(self.config.sources.hackernews, client)
-                tasks.append(self._fetch_with_progress("Hacker News", hn_scraper, since))
+            if sources.hackernews.enabled:
+                hn_scraper = HackerNewsScraper(sources.hackernews, client)
+                tasks.append(("Hacker News", hn_scraper))
 
             # RSS feeds
-            if self.config.sources.rss:
+            if sources.rss:
                 from .extractors import ExtractorRegistry
                 rss_scraper = RSSScraper(
-                    self.config.sources.rss,
+                    sources.rss,
                     client,
                     ExtractorRegistry(self.config.extractors),
                 )
-                tasks.append(self._fetch_with_progress("RSS Feeds", rss_scraper, since))
+                tasks.append(("RSS Feeds", rss_scraper))
 
             # Reddit
-            if self.config.sources.reddit.enabled:
-                reddit_scraper = RedditScraper(self.config.sources.reddit, client)
-                tasks.append(self._fetch_with_progress("Reddit", reddit_scraper, since))
+            if sources.reddit.enabled:
+                reddit_scraper = RedditScraper(sources.reddit, client)
+                tasks.append(("Reddit", reddit_scraper))
 
             # Telegram
-            if self.config.sources.telegram.enabled:
-                telegram_scraper = TelegramScraper(self.config.sources.telegram, client)
-                tasks.append(self._fetch_with_progress("Telegram", telegram_scraper, since))
+            if sources.telegram.enabled:
+                telegram_scraper = TelegramScraper(sources.telegram, client)
+                tasks.append(("Telegram", telegram_scraper))
 
             # Twitter (Apify or Playwright mode)
-            if self.config.sources.twitter and self.config.sources.twitter.enabled:
-                tw_cfg = self.config.sources.twitter
+            if sources.twitter and sources.twitter.enabled:
+                tw_cfg = sources.twitter
                 if tw_cfg.mode == "playwright":
                     twitter_scraper = TwitterPlaywrightScraper(tw_cfg)
                 else:
                     twitter_scraper = TwitterScraper(tw_cfg, client)
-                tasks.append(self._fetch_with_progress("Twitter", twitter_scraper, since))
+                tasks.append(("Twitter", twitter_scraper))
 
             # OpenBB (financial news / filings via the OpenBB Platform SDK)
-            if self.config.sources.openbb and self.config.sources.openbb.enabled:
-                openbb_scraper = OpenBBScraper(self.config.sources.openbb, client)
-                tasks.append(self._fetch_with_progress("OpenBB", openbb_scraper, since))
+            if sources.openbb and sources.openbb.enabled:
+                openbb_scraper = OpenBBScraper(sources.openbb, client)
+                tasks.append(("OpenBB", openbb_scraper))
 
             # OSS Insight trending repos
-            if self.config.sources.ossinsight and self.config.sources.ossinsight.enabled:
-                oss_scraper = OSSInsightScraper(self.config.sources.ossinsight, client)
-                tasks.append(self._fetch_with_progress("OSS Insight", oss_scraper, since))
+            if sources.ossinsight and sources.ossinsight.enabled:
+                oss_scraper = OSSInsightScraper(sources.ossinsight, client)
+                tasks.append(("OSS Insight", oss_scraper))
 
             # GDELT 2.0 DOC API (key-less global news)
-            if self.config.sources.gdelt and self.config.sources.gdelt.enabled:
-                gdelt_scraper = GDELTScraper(self.config.sources.gdelt, client)
-                tasks.append(self._fetch_with_progress("GDELT", gdelt_scraper, since))
+            if sources.gdelt and sources.gdelt.enabled:
+                gdelt_scraper = GDELTScraper(sources.gdelt, client)
+                tasks.append(("GDELT", gdelt_scraper))
 
             # Google News RSS (key-less news search)
-            if self.config.sources.google_news and self.config.sources.google_news.enabled:
-                gn_scraper = GoogleNewsScraper(self.config.sources.google_news, client)
-                tasks.append(self._fetch_with_progress("Google News", gn_scraper, since))
+            if sources.google_news and sources.google_news.enabled:
+                gn_scraper = GoogleNewsScraper(sources.google_news, client)
+                tasks.append(("Google News", gn_scraper))
 
             # ArXiv academic papers
-            if self.config.sources.arxiv:
-                for idx, arxiv_cfg in enumerate(self.config.sources.arxiv):
+            if sources.arxiv:
+                for idx, arxiv_cfg in enumerate(sources.arxiv):
                     if arxiv_cfg.enabled:
                         arxiv_scraper = ArXivScraper(arxiv_cfg, client)
                         name = f"ArXiv ({arxiv_cfg.category or idx+1})"
-                        tasks.append(self._fetch_with_progress(name, arxiv_scraper, since))
+                        tasks.append((name, arxiv_scraper))
 
             # Patents
-            if self.config.sources.patents:
-                for idx, patent_cfg in enumerate(self.config.sources.patents):
+            if sources.patents:
+                for idx, patent_cfg in enumerate(sources.patents):
                     if patent_cfg.enabled:
                         patent_scraper = GooglePatentsScraper(patent_cfg, client)
                         name = f"Patents ({patent_cfg.category or idx+1})"
-                        tasks.append(self._fetch_with_progress(name, patent_scraper, since))
+                        tasks.append((name, patent_scraper))
 
             # Crossref academic journals (e.g. MDPI Vehicles)
-            if self.config.sources.crossref:
-                for idx, crossref_cfg in enumerate(self.config.sources.crossref):
+            if sources.crossref:
+                for idx, crossref_cfg in enumerate(sources.crossref):
                     if crossref_cfg.enabled:
                         crossref_scraper = CrossrefScraper(crossref_cfg, client)
                         name = f"Crossref ({crossref_cfg.journal_name or crossref_cfg.issn or idx+1})"
-                        tasks.append(self._fetch_with_progress(name, crossref_scraper, since))
+                        tasks.append((name, crossref_scraper))
 
             # Fetch all concurrently
-            outcomes = await asyncio.gather(*tasks)
+            outcomes = await asyncio.gather(*(
+                self._fetch_with_progress(name, scraper, since)
+                for name, scraper in tasks
+                if source_names is None or name in source_names
+            ))
             self.last_fetch_report = FetchReport(outcomes=list(outcomes))
 
             # Flatten successful and empty outcomes; failures remain in the report.
