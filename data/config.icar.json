@@ -299,7 +299,7 @@
     "time_window_hours": 24
   },
   "digest": {
-    "max_items": 20,
+    "max_items": 30,
     "profile_order": [
       "icar-info",
       "icar-papers",
@@ -308,7 +308,7 @@
     "category_groups": {
       "papers": {
         "name": "前沿论文",
-        "limit": 5,
+        "limit": 10,
         "categories": [
           "arxiv-paper",
           "mdpi-paper",
@@ -317,7 +317,7 @@
       },
       "patents": {
         "name": "前瞻专利",
-        "limit": 3,
+        "limit": 5,
         "categories": [
           "chassis-patent"
         ]
